@@ -20,9 +20,13 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
     }
   }
 
+  // Hero shows first 8 articles, so LatestNews should start from article 9 (offset 8) for ALL tab
+  // For filtered categories, start from beginning
+  const initialOffset = selectedTagId === "ALL" ? 8 : 0;
+
   const [trendingArticles, latestArticles, tags] = await Promise.all([
     getTrendingArticles(),
-    getLatestArticles(selectedTagId, 1), // Fetch based on tag or ALL
+    getLatestArticles(selectedTagId, 1, 8, initialOffset), // Fetch based on tag or ALL with offset
     getTags()
   ]);
 

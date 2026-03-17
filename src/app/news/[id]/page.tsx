@@ -4,11 +4,15 @@ import { notFound } from "next/navigation";
 import { Metadata } from "next";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
-import { Eye, Send } from "lucide-react";
+import { Send } from "lucide-react";
 import { ReadNext } from "@/components/ReadNext";
 import { getArticleBySlug } from "@/lib/api";
 import { cleanArticleContentServer } from "@/lib/server-utils";
 import { ArticleActions } from "@/components/ArticleActions";
+import { ViewCounter } from "@/components/ViewCounter";
+
+// Disable caching for this page to ensure views are incremented on each visit
+export const revalidate = 0;
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
     const { id } = await params;
@@ -87,11 +91,12 @@ export default async function ArticlePage({ params }: { params: Promise<{ id: st
                         <div className="flex-1"></div>
 
                         <div className="flex gap-4 items-center">
-                            <div className="flex items-center gap-1.5 text-muted-foreground mr-2">
-                                <Eye className="w-5 h-5" />
-                                <span className="text-xs font-bold uppercase tracking-widest">{article.views || 0}</span>
-                            </div>
-                            <ArticleActions views={article.views || 0} />
+                            <ViewCounter views={article.views} />
+                            <ArticleActions
+                                views={article.views || 0}
+                                slug={slug}
+                                title={article.title}
+                            />
                         </div>
                     </div>
                 </header>
@@ -130,7 +135,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ id: st
                         )}
 
                         {/* Validated Comments Section (Placeholder for now) */}
-                        <div className="mt-16 pt-12 border-t border-border">
+                        <div id="comments-section" className="mt-16 pt-12 border-t border-border">
                             <h3 className="text-2xl font-bold text-foreground uppercase tracking-tight mb-8">
                                 Comments
                             </h3>
