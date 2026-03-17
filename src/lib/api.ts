@@ -21,16 +21,18 @@ export interface Tag {
     count: number;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'; // Fallback if not set
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 // Helper Functions
 
 export async function getTrendingArticles(): Promise<Article[]> {
     try {
-        const response = await axios.get(`${API_URL}/trending-posts`); // Mapped from next.config rewrites
+        // Call WordPress trending endpoint for most viewed posts
+        const response = await axios.get(
+            `https://api.maknauang.com/wp-json/myapi/v1/trending-by-views?per_page=6&_embed`
+        );
 
         let rawArticles: any[] = [];
-        // Handle different response structures
         if (Array.isArray(response.data)) {
             rawArticles = response.data;
         } else if (response.data && Array.isArray(response.data.value)) {
@@ -39,23 +41,59 @@ export async function getTrendingArticles(): Promise<Article[]> {
             rawArticles = response.data.data;
         }
 
-        return rawArticles.map((item: any) => ({
-            id: item.id?.toString() || item.slug,
-            slug: item.slug,
-            category: (item.category && (Array.isArray(item.category) ? item.category[0] : item.category)) || "News",
-            title: item.title,
-            excerpt: item.excerpt || "", // API might not send excerpt
-            author: item.author || "Admin",
-            date: item.publishedAt ? new Date(item.publishedAt).toLocaleDateString('en-GB', {
-                day: '2-digit',
-                month: 'short',
-                year: 'numeric'
-            }) : 'Recent',
-            imageUrl: item.image,
-            categorySlug: "news" // Default or extract if available
-        }));
+        return rawArticles.map((item: any) => {
+            // If item has _embedded, it's standard WP API format - use helper
+            if (item._embedded) {
+                return mapWpPostToArticle(item);
+            }
+
+            // Helper function to extract category name safely
+            const getCategoryName = (cat: any): string => {
+                if (!cat) return "News";
+                if (typeof cat === 'string') return cat;
+                if (Array.isArray(cat)) {
+                    if (cat.length === 0) return "News";
+                    const first = cat[0];
+                    return typeof first === 'string' ? first : (first?.name || "News");
+                }
+                if (typeof cat === 'object' && cat.name) return cat.name;
+                return "News";
+            };
+
+            return {
+                id: String(item.id || item.slug || ''),
+                slug: item.slug || '',
+                category: getCategoryName(item.category),
+                title: item.title?.rendered || item.title?.raw || String(item.title || ""),
+                excerpt: item.excerpt?.rendered
+                    ? item.excerpt.rendered.replace(/<[^>]*>/g, '').slice(0, 150)
+                    : (String(item.excerpt || "")),
+                author: item.author?.name || item.author?.slug || String(item.author || "Admin"),
+                authorSlug: item.author?.slug || item.authorSlug || "admin",
+                date: item.publishedAt
+                    ? new Date(item.publishedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                    : (item.date
+                        ? new Date(item.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                        : 'Recent'),
+                imageUrl: item.image || (item.featured_media?.source_url || null),
+                categorySlug: "news"
+            };
+        });
     } catch (error) {
         console.error("Failed to fetch trending articles:", error);
+
+        // Fallback: get latest articles if trending fails
+        try {
+            const response = await axios.get(
+                `https://api.maknauang.com/wp-json/wp/v2/posts?per_page=6&_embed`
+            );
+            if (Array.isArray(response.data)) {
+                return response.data.map(mapWpPostToArticle);
+            }
+        } catch (fallbackError) {
+            console.error("Failed to fetch fallback articles:", fallbackError);
+        }
+
         return [];
     }
 }
@@ -67,10 +105,6 @@ function mapWpPostToArticle(post: any): Article {
     const authorName = authorObj ? authorObj.name : "Admin";
     const authorSlug = authorObj ? authorObj.slug : "admin";
 
-    // We try to find category name from embedded terms if possible, or just default to News/first category ID
-    // Since we filtered by category, we know the category
-    // But displaying it is tricky without fetching category details again or mapping from ID
-    // For now, let's use a placeholder or try to extract from _embedded['wp:term']
     let categoryName = "News";
     let categorySlug = "news";
     if (post._embedded && post._embedded['wp:term']) {
@@ -101,7 +135,6 @@ function mapWpPostToArticle(post: any): Article {
 
 export async function getLatestArticles(tag: string | number = "ALL", page: number = 1, perPage: number = 8, offset?: number): Promise<Article[]> {
     try {
-        // If "ALL", use the custom API for mixed latest posts
         let wpApiUrl = `https://api.maknauang.com/wp-json/wp/v2/posts?page=${page}&per_page=${perPage}&_embed`;
 
         if (tag !== "ALL") {
@@ -123,7 +156,6 @@ export async function getLatestArticles(tag: string | number = "ALL", page: numb
 
 export async function getTags(): Promise<Tag[]> {
     try {
-        // Fetch Categories from Standard WP API
         const response = await axios.get('https://api.maknauang.com/wp-json/wp/v2/categories?per_page=99&orderby=count&order=desc');
         if (Array.isArray(response.data)) {
             return response.data.map((cat: any) => ({
@@ -137,6 +169,112 @@ export async function getTags(): Promise<Tag[]> {
     } catch (error) {
         console.error("Failed to fetch tags:", error);
         return [];
+    }
+}
+
+// Get all categories for categories page
+export async function getAllCategories(): Promise<Tag[]> {
+    try {
+        const response = await axios.get('https://api.maknauang.com/wp-json/wp/v2/categories?per_page=99&orderby=count&order=desc&hide_empty=true');
+        if (Array.isArray(response.data)) {
+            return response.data.map((cat: any) => ({
+                id: cat.id,
+                name: cat.name,
+                slug: cat.slug,
+                count: cat.count
+            }));
+        }
+        return [];
+    } catch (error) {
+        console.error("Failed to fetch categories:", error);
+        return [];
+    }
+}
+
+// Get all tags for tags page
+export async function getAllTags(): Promise<Tag[]> {
+    try {
+        const response = await axios.get('https://api.maknauang.com/wp-json/wp/v2/tags?per_page=99&orderby=count&order=desc&hide_empty=true');
+        if (Array.isArray(response.data)) {
+            return response.data.map((tag: any) => ({
+                id: tag.id,
+                name: tag.name,
+                slug: tag.slug,
+                count: tag.count
+            }));
+        }
+        return [];
+    } catch (error) {
+        console.error("Failed to fetch tags list:", error);
+        return [];
+    }
+}
+
+// Get posts by category
+export async function getPostsByCategory(categorySlug: string, page: number = 1, perPage: number = 9): Promise<{ articles: Article[]; category: Tag | null; total: number }> {
+    try {
+        // First get category by slug
+        const catResponse = await axios.get(`https://api.maknauang.com/wp-json/wp/v2/categories?slug=${categorySlug}`);
+        if (!Array.isArray(catResponse.data) || catResponse.data.length === 0) {
+            return { articles: [], category: null, total: 0 };
+        }
+        const category = catResponse.data[0];
+
+        // Get total posts
+        const total = category.count || 0;
+
+        // Then get posts by category
+        const wpApiUrl = `https://api.maknauang.com/wp-json/wp/v2/posts?categories=${category.id}&page=${page}&per_page=${perPage}&_embed`;
+        const response = await axios.get(wpApiUrl);
+        const articles = response.data.map(mapWpPostToArticle);
+
+        return {
+            articles,
+            category: {
+                id: category.id,
+                name: category.name,
+                slug: category.slug,
+                count: category.count
+            },
+            total
+        };
+    } catch (error) {
+        console.error("Failed to fetch posts by category:", error);
+        return { articles: [], category: null, total: 0 };
+    }
+}
+
+// Get posts by tag
+export async function getPostsByTag(tagSlug: string, page: number = 1, perPage: number = 9): Promise<{ articles: Article[]; tag: Tag | null; total: number }> {
+    try {
+        // First get tag by slug
+        const tagResponse = await axios.get(`https://api.maknauang.com/wp-json/wp/v2/tags?slug=${tagSlug}`);
+        if (!Array.isArray(tagResponse.data) || tagResponse.data.length === 0) {
+            return { articles: [], tag: null, total: 0 };
+        }
+        const tag = tagResponse.data[0];
+
+        // Get total posts
+        const total = tag.count || 0;
+
+        // Then get posts by tag
+        const wpApiUrl = `https://api.maknauang.com/wp-json/wp/v2/posts?tags=${tag.id}&page=${page}&per_page=${perPage}&_embed`;
+        const response = await axios.get(wpApiUrl);
+        const articles = response.data.map(mapWpPostToArticle);
+
+        return {
+            articles,
+            tag: {
+                id: tag.id,
+                name: tag.name,
+                slug: tag.slug,
+                count: tag.count
+            },
+            total
+        };
+    } catch (error) {
+        console.error("Failed to fetch posts by tag:", error);
+        return { articles: [], tag: null, total: 0 };
     }
 }
 
@@ -186,7 +324,7 @@ export async function getAuthorBySlug(slug: string): Promise<Author | null> {
 
 export async function getPostsByAuthor(authorId: number, page: number = 1): Promise<Article[]> {
     try {
-        const response = await axios.get(`https://api.maknauang.com/wp-json/wp/v2/posts?author=${authorId}&page=${page}&per_page=9&_embed`); // 9 posts per page
+        const response = await axios.get(`https://api.maknauang.com/wp-json/wp/v2/posts?author=${authorId}&page=${page}&per_page=9&_embed`);
         return response.data.map(mapWpPostToArticle);
     } catch (error) {
         console.error("Failed to fetch author posts:", error);
@@ -200,12 +338,13 @@ export interface ArticleDetail extends Article {
     content: string;
     views: number;
     tags: string[];
-    // Add other fields as needed
 }
 
+// Server-side: Fetch article WITH views from WordPress custom endpoint
 export async function getArticleBySlug(slug: string): Promise<ArticleDetail | null> {
     try {
-        const response = await axios.get(`https://api.maknauang.com/detail/${slug}`);
+        // Use WordPress custom endpoint that includes views and increments them
+        const response = await axios.get(`https://api.maknauang.com/wp-json/myapi/v1/detail/${slug}`);
         const data = response.data;
 
         // If custom endpoint works and returns data
@@ -231,22 +370,20 @@ export async function getArticleBySlug(slug: string): Promise<ArticleDetail | nu
             };
         }
 
-        // Fallback to Standard WP API if custom endpoint fails or returns empty
-        // Throw to trigger catch block or just continue
-        throw new Error("Custom endpoint returned empty/invalid data, trying fallback");
-
+        return null;
     } catch (error) {
-        console.warn("Custom detail fetch failed, trying standard API fallback for:", slug);
+        console.error("Failed to fetch article from custom endpoint, trying fallback:", error);
+
+        // Fallback to WP API standard
         try {
             const wpApiUrl = `https://api.maknauang.com/wp-json/wp/v2/posts?slug=${slug}&_embed`;
-            const response = await axios.get(wpApiUrl);
+            const wpResponse = await axios.get(wpApiUrl);
 
-            if (Array.isArray(response.data) && response.data.length > 0) {
-                const post = response.data[0];
-                // Map standard post to ArticleDetail
+            if (Array.isArray(wpResponse.data) && wpResponse.data.length > 0) {
+                const post = wpResponse.data[0];
                 const basicArticle = mapWpPostToArticle(post);
 
-                // Extract additional detail fields
+                // Extract tags
                 let tagNames: string[] = [];
                 if (post._embedded && post._embedded['wp:term']) {
                     const terms = post._embedded['wp:term'].flat();
@@ -258,15 +395,16 @@ export async function getArticleBySlug(slug: string): Promise<ArticleDetail | nu
                 return {
                     ...basicArticle,
                     content: post.content.rendered,
-                    views: 0,
+                    views: 0, // WP API standard doesn't have views
                     tags: tagNames,
                     categorySlug: basicArticle.categorySlug
                 };
             }
+
+            return null;
         } catch (fallbackError) {
             console.error("Fallback fetch also failed:", fallbackError);
+            return null;
         }
-
-        return null;
     }
 }

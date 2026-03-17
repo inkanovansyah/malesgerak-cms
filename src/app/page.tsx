@@ -4,7 +4,8 @@ import { TrendingNews } from "@/components/TrendingNews";
 import { LatestNews } from "@/components/LatestNews";
 import { Footer } from "@/components/Footer";
 import { AdBanner } from "@/components/AdBanner";
-import { getLatestArticles, getTags, getTrendingArticles, getCategoryIdBySlug } from "@/lib/api";
+import { YouTubeShorts } from "@/components/YouTubeShorts";
+import { getLatestArticles, getTags, getTrendingArticles, getCategoryIdBySlug, getAllTags } from "@/lib/api";
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 
@@ -20,10 +21,15 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
     }
   }
 
-  const [trendingArticles, latestArticles, tags] = await Promise.all([
+  // Hero shows first 8 articles, so LatestNews should start from article 9 (offset 8) for ALL tab
+  // For filtered categories, start from beginning
+  const initialOffset = selectedTagId === "ALL" ? 8 : 0;
+
+  const [trendingArticles, latestArticles, categories, allTags] = await Promise.all([
     getTrendingArticles(),
-    getLatestArticles(selectedTagId, 1), // Fetch based on tag or ALL
-    getTags()
+    getLatestArticles(selectedTagId, 1, 8, initialOffset),
+    getTags(),  // Categories for filtering
+    getAllTags()  // All tags for display
   ]);
 
   return (
@@ -31,11 +37,13 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
       <Navbar />
       <AdBanner />
       <Hero />
-      <TrendingNews articles={trendingArticles} />
+      {/* <TrendingNews articles={trendingArticles} /> */}
+      <YouTubeShorts />
       <AdBanner />
       <LatestNews
         initialArticles={latestArticles}
-        tags={tags}
+        categories={categories}
+        allTags={allTags}
         trendingArticles={trendingArticles}
         defaultTag={selectedTagId}
       />
