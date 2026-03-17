@@ -27,7 +27,10 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 export async function getTrendingArticles(): Promise<Article[]> {
     try {
-        const response = await axios.get(`${API_URL}/trending-posts`);
+        // Call WordPress trending endpoint for most viewed posts
+        const response = await axios.get(
+            `https://api.maknauang.com/wp-json/myapi/v1/trending-by-views?per_page=6&_embed`
+        );
 
         let rawArticles: any[] = [];
         if (Array.isArray(response.data)) {
@@ -38,23 +41,59 @@ export async function getTrendingArticles(): Promise<Article[]> {
             rawArticles = response.data.data;
         }
 
-        return rawArticles.map((item: any) => ({
-            id: item.id?.toString() || item.slug,
-            slug: item.slug,
-            category: (item.category && (Array.isArray(item.category) ? item.category[0] : item.category)) || "News",
-            title: item.title,
-            excerpt: item.excerpt || "",
-            author: item.author || "Admin",
-            date: item.publishedAt ? new Date(item.publishedAt).toLocaleDateString('en-GB', {
-                day: '2-digit',
-                month: 'short',
-                year: 'numeric'
-            }) : 'Recent',
-            imageUrl: item.image,
-            categorySlug: "news"
-        }));
+        return rawArticles.map((item: any) => {
+            // If item has _embedded, it's standard WP API format - use helper
+            if (item._embedded) {
+                return mapWpPostToArticle(item);
+            }
+
+            // Helper function to extract category name safely
+            const getCategoryName = (cat: any): string => {
+                if (!cat) return "News";
+                if (typeof cat === 'string') return cat;
+                if (Array.isArray(cat)) {
+                    if (cat.length === 0) return "News";
+                    const first = cat[0];
+                    return typeof first === 'string' ? first : (first?.name || "News");
+                }
+                if (typeof cat === 'object' && cat.name) return cat.name;
+                return "News";
+            };
+
+            return {
+                id: String(item.id || item.slug || ''),
+                slug: item.slug || '',
+                category: getCategoryName(item.category),
+                title: item.title?.rendered || item.title?.raw || String(item.title || ""),
+                excerpt: item.excerpt?.rendered
+                    ? item.excerpt.rendered.replace(/<[^>]*>/g, '').slice(0, 150)
+                    : (String(item.excerpt || "")),
+                author: item.author?.name || item.author?.slug || String(item.author || "Admin"),
+                authorSlug: item.author?.slug || item.authorSlug || "admin",
+                date: item.publishedAt
+                    ? new Date(item.publishedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                    : (item.date
+                        ? new Date(item.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                        : 'Recent'),
+                imageUrl: item.image || (item.featured_media?.source_url || null),
+                categorySlug: "news"
+            };
+        });
     } catch (error) {
         console.error("Failed to fetch trending articles:", error);
+
+        // Fallback: get latest articles if trending fails
+        try {
+            const response = await axios.get(
+                `https://api.maknauang.com/wp-json/wp/v2/posts?per_page=6&_embed`
+            );
+            if (Array.isArray(response.data)) {
+                return response.data.map(mapWpPostToArticle);
+            }
+        } catch (fallbackError) {
+            console.error("Failed to fetch fallback articles:", fallbackError);
+        }
+
         return [];
     }
 }
@@ -130,6 +169,112 @@ export async function getTags(): Promise<Tag[]> {
     } catch (error) {
         console.error("Failed to fetch tags:", error);
         return [];
+    }
+}
+
+// Get all categories for categories page
+export async function getAllCategories(): Promise<Tag[]> {
+    try {
+        const response = await axios.get('https://api.maknauang.com/wp-json/wp/v2/categories?per_page=99&orderby=count&order=desc&hide_empty=true');
+        if (Array.isArray(response.data)) {
+            return response.data.map((cat: any) => ({
+                id: cat.id,
+                name: cat.name,
+                slug: cat.slug,
+                count: cat.count
+            }));
+        }
+        return [];
+    } catch (error) {
+        console.error("Failed to fetch categories:", error);
+        return [];
+    }
+}
+
+// Get all tags for tags page
+export async function getAllTags(): Promise<Tag[]> {
+    try {
+        const response = await axios.get('https://api.maknauang.com/wp-json/wp/v2/tags?per_page=99&orderby=count&order=desc&hide_empty=true');
+        if (Array.isArray(response.data)) {
+            return response.data.map((tag: any) => ({
+                id: tag.id,
+                name: tag.name,
+                slug: tag.slug,
+                count: tag.count
+            }));
+        }
+        return [];
+    } catch (error) {
+        console.error("Failed to fetch tags list:", error);
+        return [];
+    }
+}
+
+// Get posts by category
+export async function getPostsByCategory(categorySlug: string, page: number = 1, perPage: number = 9): Promise<{ articles: Article[]; category: Tag | null; total: number }> {
+    try {
+        // First get category by slug
+        const catResponse = await axios.get(`https://api.maknauang.com/wp-json/wp/v2/categories?slug=${categorySlug}`);
+        if (!Array.isArray(catResponse.data) || catResponse.data.length === 0) {
+            return { articles: [], category: null, total: 0 };
+        }
+        const category = catResponse.data[0];
+
+        // Get total posts
+        const total = category.count || 0;
+
+        // Then get posts by category
+        const wpApiUrl = `https://api.maknauang.com/wp-json/wp/v2/posts?categories=${category.id}&page=${page}&per_page=${perPage}&_embed`;
+        const response = await axios.get(wpApiUrl);
+        const articles = response.data.map(mapWpPostToArticle);
+
+        return {
+            articles,
+            category: {
+                id: category.id,
+                name: category.name,
+                slug: category.slug,
+                count: category.count
+            },
+            total
+        };
+    } catch (error) {
+        console.error("Failed to fetch posts by category:", error);
+        return { articles: [], category: null, total: 0 };
+    }
+}
+
+// Get posts by tag
+export async function getPostsByTag(tagSlug: string, page: number = 1, perPage: number = 9): Promise<{ articles: Article[]; tag: Tag | null; total: number }> {
+    try {
+        // First get tag by slug
+        const tagResponse = await axios.get(`https://api.maknauang.com/wp-json/wp/v2/tags?slug=${tagSlug}`);
+        if (!Array.isArray(tagResponse.data) || tagResponse.data.length === 0) {
+            return { articles: [], tag: null, total: 0 };
+        }
+        const tag = tagResponse.data[0];
+
+        // Get total posts
+        const total = tag.count || 0;
+
+        // Then get posts by tag
+        const wpApiUrl = `https://api.maknauang.com/wp-json/wp/v2/posts?tags=${tag.id}&page=${page}&per_page=${perPage}&_embed`;
+        const response = await axios.get(wpApiUrl);
+        const articles = response.data.map(mapWpPostToArticle);
+
+        return {
+            articles,
+            tag: {
+                id: tag.id,
+                name: tag.name,
+                slug: tag.slug,
+                count: tag.count
+            },
+            total
+        };
+    } catch (error) {
+        console.error("Failed to fetch posts by tag:", error);
+        return { articles: [], tag: null, total: 0 };
     }
 }
 
@@ -227,7 +372,39 @@ export async function getArticleBySlug(slug: string): Promise<ArticleDetail | nu
 
         return null;
     } catch (error) {
-        console.error("Failed to fetch article:", error);
-        return null;
+        console.error("Failed to fetch article from custom endpoint, trying fallback:", error);
+
+        // Fallback to WP API standard
+        try {
+            const wpApiUrl = `https://api.maknauang.com/wp-json/wp/v2/posts?slug=${slug}&_embed`;
+            const wpResponse = await axios.get(wpApiUrl);
+
+            if (Array.isArray(wpResponse.data) && wpResponse.data.length > 0) {
+                const post = wpResponse.data[0];
+                const basicArticle = mapWpPostToArticle(post);
+
+                // Extract tags
+                let tagNames: string[] = [];
+                if (post._embedded && post._embedded['wp:term']) {
+                    const terms = post._embedded['wp:term'].flat();
+                    tagNames = terms
+                        .filter((t: any) => t.taxonomy === 'post_tag')
+                        .map((t: any) => t.name);
+                }
+
+                return {
+                    ...basicArticle,
+                    content: post.content.rendered,
+                    views: 0, // WP API standard doesn't have views
+                    tags: tagNames,
+                    categorySlug: basicArticle.categorySlug
+                };
+            }
+
+            return null;
+        } catch (fallbackError) {
+            console.error("Fallback fetch also failed:", fallbackError);
+            return null;
+        }
     }
 }

@@ -146,7 +146,7 @@ export function ArticleActions({ views, slug, title }: ArticleActionsProps) {
                                 </button>
 
                                 {/* Native Share (Mobile) */}
-                                {navigator.share && (
+                                {typeof navigator.share !== 'undefined' && (
                                     <button
                                         onClick={nativeShare}
                                         className="w-full flex items-center gap-3 px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors text-left md:hidden"

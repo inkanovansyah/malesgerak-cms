@@ -6,16 +6,17 @@ import { useQuery } from "@tanstack/react-query";
 import { ArticleCard } from "@/components/ArticleCard";
 import { ChevronRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Article, Tag, getLatestArticles } from "@/lib/api";
+import { Article, Tag, getLatestArticles, getAllTags } from "@/lib/api";
 
 interface LatestNewsProps {
     initialArticles: Article[];
-    tags: Tag[];
+    categories: Tag[];
+    allTags: Tag[];
     trendingArticles: Article[];
     defaultTag?: string | number;
 }
 
-export function LatestNews({ initialArticles, tags, trendingArticles, defaultTag = "ALL" }: LatestNewsProps) {
+export function LatestNews({ initialArticles, categories, allTags, trendingArticles, defaultTag = "ALL" }: LatestNewsProps) {
     const [selectedTag, setSelectedTag] = useState<string | number>(defaultTag);
     const [allArticles, setAllArticles] = useState<Article[]>(initialArticles);
     const [currentPage, setCurrentPage] = useState(1);
@@ -80,7 +81,7 @@ export function LatestNews({ initialArticles, tags, trendingArticles, defaultTag
 
     const displayedTags = [
         { id: -1, name: "ALL", slug: "ALL", count: 0 },
-        ...(tags || [])
+        ...(categories || [])
     ];
 
     const hasMore = displayedArticles.length >= PER_PAGE && displayedArticles.length % PER_PAGE === 0;
