@@ -7,8 +7,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import useEmblaCarousel from "embla-carousel-react";
-
-import { usePostStore } from "@/store/usePostStore";
+import { getTrendingArticles, type Article } from "@/lib/api";
 
 export function Hero() {
     const [emblaRef, emblaApi] = useEmblaCarousel({
@@ -21,11 +20,30 @@ export function Hero() {
         }
     });
 
-    const { posts, isLoading, error, fetchPosts, hasLoaded } = usePostStore();
+    const [posts, setPosts] = useState<Article[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [hasLoaded, setHasLoaded] = useState(false);
 
     useEffect(() => {
-        fetchPosts();
-    }, [fetchPosts]);
+        const loadPosts = async () => {
+            setIsLoading(true);
+            setError(null);
+            try {
+                const data = await getTrendingArticles();
+                setPosts(data.slice(0, 8)); // Take first 8 posts
+                setHasLoaded(true);
+            } catch (err) {
+                console.error("Failed to fetch posts:", err);
+                setError("Failed to load content");
+                setHasLoaded(true);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        loadPosts();
+    }, []);
 
     const scrollPrev = useCallback(() => emblaApi && emblaApi.scrollPrev(), [emblaApi]);
     const scrollNext = useCallback(() => emblaApi && emblaApi.scrollNext(), [emblaApi]);
@@ -72,12 +90,12 @@ export function Hero() {
                                 </div>
                             ))
                         ) : posts.length > 0 ? (
-                            Array.isArray(posts) && posts.map((post) => (
+                            posts.map((post) => (
                                 <div key={post.id} className="min-w-0 flex-[0_0_100%] md:flex-[0_0_50%] lg:flex-[0_0_25%] pl-6 group/card cursor-pointer select-none">
                                     {/* Image Container */}
                                     <div className="relative aspect-[3/4] w-full overflow-hidden rounded-sm mb-4">
                                         <Image
-                                            src={post.image}
+                                            src={post.imageUrl}
                                             alt={post.title}
                                             fill
                                             draggable={false}
@@ -85,7 +103,7 @@ export function Hero() {
                                         />
                                         {/* Tag */}
                                         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-neon px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-black whitespace-nowrap">
-                                            {post.category[0] || "NEWS"}
+                                            {post.category || "NEWS"}
                                         </div>
                                     </div>
 
@@ -103,11 +121,7 @@ export function Hero() {
                                             </span>
                                             <span className="text-muted-foreground">|</span>
                                             <span>
-                                                {new Date(post.publishedAt).toLocaleDateString('en-GB', {
-                                                    day: '2-digit',
-                                                    month: 'long',
-                                                    year: 'numeric'
-                                                }).toUpperCase()}
+                                                {post.date}
                                             </span>
                                         </div>
                                     </div>
