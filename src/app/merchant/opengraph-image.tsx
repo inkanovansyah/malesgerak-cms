@@ -21,9 +21,10 @@ export default async function Image() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     position: 'relative',
+                    padding: '60px',
                 }}
             >
-                {/* Neon accent line */}
+                {/* Top accent */}
                 <div
                     style={{
                         position: 'absolute',
@@ -59,7 +60,7 @@ export default async function Image() {
                     MAKNA UANG SOLAR
                 </div>
 
-                {/* Title */}
+                {/* Title - Line 1 */}
                 <div
                     style={{
                         fontSize: '64px',
@@ -71,7 +72,22 @@ export default async function Image() {
                         lineHeight: 1.1,
                     }}
                 >
-                    PANEL SURYA<br />BERKUALITAS
+                    PANEL SURYA
+                </div>
+
+                {/* Title - Line 2 */}
+                <div
+                    style={{
+                        fontSize: '64px',
+                        fontWeight: 900,
+                        letterSpacing: '-2px',
+                        color: '#fff',
+                        textTransform: 'uppercase',
+                        textAlign: 'center',
+                        lineHeight: 1.1,
+                    }}
+                >
+                    BERKUALITAS
                 </div>
 
                 {/* Price range */}
