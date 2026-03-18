@@ -12,6 +12,7 @@ export interface Article {
     imageUrl: string;
     authorSlug?: string;
     categorySlug?: string;
+    views?: number;
 }
 
 export interface Tag {
@@ -19,6 +20,38 @@ export interface Tag {
     name: string;
     slug: string;
     count: number;
+}
+
+// Merchant / Product Types
+export interface Product {
+    id: string;
+    name: string;
+    slug: string;
+    brand: string;
+    price: number;
+    power: string;
+    type: string;
+    efficiency: string;
+    dimensions: string;
+    weight: string;
+    warranty: string;
+    features: string[];
+    image: string;
+    description: string;
+    stock?: number;
+    status?: 'available' | 'out-of-stock' | 'pre-order';
+}
+
+export interface ProductReview {
+    id: string;
+    productId: string;
+    name: string;
+    location: string;
+    rating: number;
+    date: string;
+    comment: string;
+    avatar?: string;
+    verified?: boolean;
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
@@ -76,7 +109,8 @@ export async function getTrendingArticles(): Promise<Article[]> {
                         ? new Date(item.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
                         : 'Recent'),
                 imageUrl: item.image || (item.featured_media?.source_url || null),
-                categorySlug: "news"
+                categorySlug: "news",
+                views: item.views || 0
             };
         });
     } catch (error) {
@@ -406,5 +440,119 @@ export async function getArticleBySlug(slug: string): Promise<ArticleDetail | nu
             console.error("Fallback fetch also failed:", fallbackError);
             return null;
         }
+    }
+}
+
+// Get total views from all articles (for stats)
+export async function getTotalViews(): Promise<number> {
+    try {
+        // Get all posts to calculate total views
+        // Note: This might be slow for large sites, consider caching or a dedicated stats endpoint
+        let page = 1;
+        let totalViews = 0;
+        let hasMore = true;
+
+        while (hasMore) {
+            const response = await axios.get(
+                `https://api.maknauang.com/wp-json/wp/v2/posts?per_page=100&page=${page}`
+            );
+
+            if (!Array.isArray(response.data) || response.data.length === 0) {
+                hasMore = false;
+                break;
+            }
+
+            // For each post, we need to get views from the detail endpoint
+            // This is expensive, so we'll batch the requests
+            const postSlugs = response.data.map((post: any) => post.slug);
+
+            // Batch fetch views (limit to 10 at a time to avoid overwhelming the server)
+            for (let i = 0; i < postSlugs.length; i += 10) {
+                const batch = postSlugs.slice(i, i + 10);
+                const viewPromises = batch.map(slug =>
+                    axios.get(`https://api.maknauang.com/wp-json/myapi/v1/detail/${slug}`)
+                        .then(res => res.data.views || 0)
+                        .catch(() => 0)
+                );
+                const batchViews = await Promise.all(viewPromises);
+                totalViews += batchViews.reduce((sum, views) => sum + views, 0);
+            }
+
+            // Check if there are more pages
+            const totalPages = parseInt(response.headers['x-wp-totalpages'] || '1');
+            hasMore = page < totalPages;
+            page++;
+        }
+
+        return totalViews;
+    } catch (error) {
+        console.error("Failed to fetch total views:", error);
+        return 0;
+    }
+}
+
+// Get site statistics (more efficient than separate calls)
+export async function getSiteStats(): Promise<{
+    totalArticles: number;
+    totalViews: number;
+    totalCategories: number;
+    totalTags: number;
+}> {
+    try {
+        // Get total posts from headers
+        const postsResponse = await axios.get('https://api.maknauang.com/wp-json/wp/v2/posts?per_page=1');
+        const totalArticles = parseInt(postsResponse.headers['x-wp-total'] || '0');
+
+        // Get total categories
+        const categoriesResponse = await axios.get('https://api.maknauang.com/wp-json/wp/v2/categories?per_page=1');
+        const totalCategories = parseInt(categoriesResponse.headers['x-wp-total'] || '0');
+
+        // Get total tags
+        const tagsResponse = await axios.get('https://api.maknauang.com/wp-json/wp/v2/tags?per_page=1');
+        const totalTags = parseInt(tagsResponse.headers['x-wp-total'] || '0');
+
+        // For views, we'll use a sample-based approach for performance
+        // Get a sample of trending articles and estimate
+        const trendingResponse = await axios.get(
+            'https://api.maknauang.com/wp-json/myapi/v1/trending-by-views?per_page=20'
+        );
+
+        let sampleViews = 0;
+        let sampleCount = 0;
+
+        const processItem = (item: any) => {
+            if (item.views) {
+                sampleViews += item.views;
+                sampleCount++;
+            }
+        };
+
+        // Process trending response
+        if (Array.isArray(trendingResponse.data)) {
+            trendingResponse.data.forEach(processItem);
+        } else if (trendingResponse.data && Array.isArray(trendingResponse.data.value)) {
+            trendingResponse.data.value.forEach(processItem);
+        } else if (trendingResponse.data && Array.isArray(trendingResponse.data.data)) {
+            trendingResponse.data.data.forEach(processItem);
+        }
+
+        // Estimate total views based on sample average
+        const avgViews = sampleCount > 0 ? sampleViews / sampleCount : 0;
+        const estimatedTotalViews = Math.round(avgViews * totalArticles);
+
+        return {
+            totalArticles,
+            totalViews: estimatedTotalViews,
+            totalCategories,
+            totalTags
+        };
+    } catch (error) {
+        console.error("Failed to fetch site stats:", error);
+        return {
+            totalArticles: 0,
+            totalViews: 0,
+            totalCategories: 0,
+            totalTags: 0
+        };
     }
 }

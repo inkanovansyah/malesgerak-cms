@@ -144,6 +144,7 @@ export function LatestNews({ initialArticles, categories, allTags, trendingArtic
                                             imageUrl={article.imageUrl}
                                             priority={index < 2}
                                             variant="horizontal"
+                                            views={article.views}
                                         />
                                     ))}
                                     {isLoadingMore && (

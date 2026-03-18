@@ -77,6 +77,7 @@ export function NewsList({ initialArticles, title = "Latest News" }: NewsListPro
                         priority={index < 3}
                         variant="vertical"
                         className="h-full"
+                        views={article.views}
                     />
                 ))}
             </div>

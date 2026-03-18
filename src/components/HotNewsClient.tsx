@@ -69,6 +69,7 @@ export function HotNewsClient({ initialArticles, trendingArticles }: HotNewsClie
                                 priority={index < 3}
                                 variant="horizontal"
                                 className="h-full"
+                                views={article.views}
                             />
                         ))}
                     </div>

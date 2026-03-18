@@ -26,6 +26,7 @@ export function ArticleGrid({ articles }: ArticleGridProps) {
                             imageUrl={article.imageUrl}
                             priority={index < 3}
                             variant="vertical"
+                            views={article.views}
                         />
                     ))}
                 </div>

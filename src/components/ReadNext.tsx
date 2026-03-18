@@ -71,6 +71,7 @@ export function ReadNext({ currentArticleId }: ReadNextProps) {
                     imageUrl={post.image}
                     variant="vertical" // Stacked vertically
                     className="mb-0" // Override default margin
+                    views={post.views}
                 />
             ))}
         </div>
