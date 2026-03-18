@@ -46,6 +46,7 @@ export function AuthorPostList({ initialPosts, authorId }: AuthorPostListProps) 
                         date={article.date}
                         imageUrl={article.imageUrl}
                         priority={index < 3}
+                        views={article.views}
                     />
                 ))}
             </div>

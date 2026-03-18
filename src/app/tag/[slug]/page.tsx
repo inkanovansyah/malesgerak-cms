@@ -97,6 +97,7 @@ export default async function TagPage({ params, searchParams }: TagPageProps) {
                                     priority={index < 3}
                                     variant="vertical"
                                     className="h-full"
+                                    views={article.views}
                                 />
                             ))}
                         </div>

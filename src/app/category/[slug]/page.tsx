@@ -89,6 +89,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
                                     priority={index < 3}
                                     variant="vertical"
                                     className="h-full"
+                                    views={article.views}
                                 />
                             ))}
                         </div>

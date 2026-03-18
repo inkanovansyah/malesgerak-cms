@@ -74,10 +74,24 @@ const SAMPLE_SHORTS: Video[] = [
         thumbnail: "https://i.ytimg.com/vi/dQw4w9WgXcQ/maxresdefault.jpg",
         views: "38K",
         publishedAt: "2 bulan lalu"
+    },
+    {
+        id: "short9",
+        title: "Cara Daftar IPO Saham",
+        thumbnail: "https://i.ytimg.com/vi/dQw4w9WgXcQ/maxresdefault.jpg",
+        views: "35K",
+        publishedAt: "2 bulan lalu"
+    },
+    {
+        id: "short10",
+        title: "Analisa Pasar Saham Hari Ini",
+        thumbnail: "https://i.ytimg.com/vi/dQw4w9WgXcQ/maxresdefault.jpg",
+        views: "32K",
+        publishedAt: "3 bulan lalu"
     }
 ];
 
-export function YouTubeShorts({ channelId = "@maknauang-h2l", limit = 4 }: YouTubeShortsProps) {
+export function YouTubeShorts({ channelId = "@maknauang-h2l", limit = 10 }: YouTubeShortsProps) {
     const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
     const [videos, setVideos] = useState<Video[]>(SAMPLE_SHORTS.slice(0, limit));
 
@@ -86,7 +100,8 @@ export function YouTubeShorts({ channelId = "@maknauang-h2l", limit = 4 }: YouTu
         align: "start",
         slidesToScroll: 1,
         breakpoints: {
-            '(min-width: 768px)': { slidesToScroll: 2 },
+            '(min-width: 640px)': { slidesToScroll: 2 },
+            '(min-width: 1024px)': { slidesToScroll: 4 },
         }
     });
 
@@ -147,7 +162,7 @@ export function YouTubeShorts({ channelId = "@maknauang-h2l", limit = 4 }: YouTu
                             {videos.map((video) => (
                                 <div
                                     key={video.id}
-                                    className="min-w-0 flex-[0_0_100%] md:flex-[0_0_50%] lg:flex-[0_0_25%] pl-4 group/shorts cursor-pointer select-none"
+                                    className="min-w-0 flex-[0_0_50%] sm:flex-[0_0_33.333%] md:flex-[0_0_25%] lg:flex-[0_0_20%] pl-4 group/shorts cursor-pointer select-none"
                                     onClick={() => handleVideoClick(video)}
                                 >
                                     <div className="relative aspect-[9/16] w-full bg-muted rounded-lg overflow-hidden border-2 border-border hover:border-neon transition-all duration-300">

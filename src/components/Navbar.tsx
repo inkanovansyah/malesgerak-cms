@@ -125,6 +125,7 @@ export function Navbar() {
                         {[
                             { name: "NEWS", href: "/news" },
                             { name: "HOT NEWS", href: "/hotnews" },
+                            { name: "MERCHANT", href: "/merchant" },
                             // { name: "ADVERTISE", href: "/contact" },
                             { name: "ABOUT", href: "/about" },
                             { name: "SUPPORT/FAQ", href: "/contact" },

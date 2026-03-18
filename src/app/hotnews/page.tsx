@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { getAllCategories, getAllTags, getTrendingArticles } from "@/lib/api";
-import { ArticleCard } from "@/components/ArticleCard";
+import { getAllCategories, getAllTags, getTrendingArticles, getSiteStats } from "@/lib/api";
 import { Tag as TagIcon, Eye, TrendingUp, Calendar, FolderOpen } from "lucide-react";
 import { Metadata } from "next";
+import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
 
 export const metadata: Metadata = {
     title: "Hot News - MaknaUang",
@@ -10,10 +11,11 @@ export const metadata: Metadata = {
 };
 
 export default async function HotNewsPage() {
-    const [categories, tags, trendingArticles] = await Promise.all([
+    const [categories, tags, trendingArticles, siteStats] = await Promise.all([
         getAllCategories(),
         getAllTags(),
-        getTrendingArticles()
+        getTrendingArticles(),
+        getSiteStats()
     ]);
 
     // Calculate date range (this week)
@@ -28,16 +30,20 @@ export default async function HotNewsPage() {
     // Get top tags by count
     const topTags = tags.sort((a, b) => b.count - a.count).slice(0, 12);
 
+    // Format view count for display
+    const formatViewCount = (count: number) => {
+        if (count >= 1000000) {
+            return `${(count / 1000000).toFixed(1)}M`;
+        }
+        if (count >= 1000) {
+            return `${(count / 1000).toFixed(1)}K`;
+        }
+        return count.toString();
+    };
+
     return (
         <main className="min-h-screen bg-background text-foreground selection:bg-neon selection:text-black">
-            {/* Navbar */}
-            <div className="border-b border-border bg-background">
-                <div className="container mx-auto px-4 md:px-8 py-4">
-                    <Link href="/" className="text-xl font-black uppercase tracking-tighter hover:text-neon transition-colors">
-                        MAKNAUANG
-                    </Link>
-                </div>
-            </div>
+            <Navbar />
 
             <div className="container mx-auto px-4 md:px-8 py-12">
                 {/* Breadcrumb */}
@@ -142,7 +148,7 @@ export default async function HotNewsPage() {
                                                             <div className="flex items-center gap-1">
                                                                 <Eye className="w-3 h-3" />
                                                                 <span className="font-bold uppercase tracking-wider">
-                                                                    {Math.floor(Math.random() * 10 + 1)}K
+                                                                    {article.views ? formatViewCount(article.views) : '-'}
                                                                 </span>
                                                             </div>
                                                         </div>
@@ -261,19 +267,19 @@ export default async function HotNewsPage() {
                             <div className="space-y-3">
                                 <div className="flex items-center justify-between">
                                     <span className="text-xs">Total Articles</span>
-                                    <span className="font-mono font-bold text-neon text-sm">{trendingArticles.length}</span>
+                                    <span className="font-mono font-bold text-neon text-sm">{siteStats.totalArticles}</span>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <span className="text-xs">Total Views</span>
-                                    <span className="font-mono font-bold text-neon text-sm">124.5K</span>
+                                    <span className="font-mono font-bold text-neon text-sm">{formatViewCount(siteStats.totalViews)}</span>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <span className="text-xs">Categories</span>
-                                    <span className="font-mono font-bold text-neon text-sm">{categories.length}</span>
+                                    <span className="font-mono font-bold text-neon text-sm">{siteStats.totalCategories}</span>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <span className="text-xs">Tags</span>
-                                    <span className="font-mono font-bold text-neon text-sm">{tags.length}</span>
+                                    <span className="font-mono font-bold text-neon text-sm">{siteStats.totalTags}</span>
                                 </div>
                             </div>
                         </div>
@@ -281,36 +287,7 @@ export default async function HotNewsPage() {
                 </div>
             </div>
 
-            {/* Footer */}
-            <footer className="border-t border-border bg-muted/30">
-                <div className="container mx-auto px-4 md:px-8 py-12">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-                        <div>
-                            <h4 className="font-bold uppercase tracking-widest text-sm mb-4">MAKNAUANG</h4>
-                            <p className="text-muted-foreground text-sm">Berita dan analisis mendalam tentang ekonomi dan stabilitas finansial.</p>
-                        </div>
-                        <div>
-                            <h4 className="font-bold uppercase tracking-widest text-sm mb-4">Quick Links</h4>
-                            <ul className="space-y-2 text-sm">
-                                <li><Link href="/" className="text-muted-foreground hover:text-neon transition-colors">Home</Link></li>
-                                <li><Link href="/categories" className="text-muted-foreground hover:text-neon transition-colors">Categories</Link></li>
-                                <li><Link href="/tags" className="text-muted-foreground hover:text-neon transition-colors">Tags</Link></li>
-                            </ul>
-                        </div>
-                        <div>
-                            <h4 className="font-bold uppercase tracking-widest text-sm mb-4">Legal</h4>
-                            <ul className="space-y-2 text-sm">
-                                <li><Link href="/privacy" className="text-muted-foreground hover:text-neon transition-colors">Privacy Policy</Link></li>
-                                <li><Link href="/terms" className="text-muted-foreground hover:text-neon transition-colors">Terms of Service</Link></li>
-                                <li><Link href="/disclaimer" className="text-muted-foreground hover:text-neon transition-colors">Disclaimer</Link></li>
-                            </ul>
-                        </div>
-                    </div>
-                    <div className="mt-8 pt-8 border-t border-border text-center text-sm text-muted-foreground">
-                        &copy; {new Date().getFullYear()} MaknaUang. All rights reserved.
-                    </div>
-                </div>
-            </footer>
+            <Footer />
         </main>
     );
 }
