@@ -163,7 +163,8 @@ function mapWpPostToArticle(post: any): Article {
             year: 'numeric'
         }),
         imageUrl: featuredMedia || "",
-        categorySlug: categorySlug
+        categorySlug: categorySlug,
+        views: 0
     };
 }
 
