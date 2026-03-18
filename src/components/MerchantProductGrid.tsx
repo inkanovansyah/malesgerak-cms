@@ -1,10 +1,23 @@
 'use client';
 
 import { AddToCartButton } from './Cart';
+import type { CartProduct } from '@/store/useCartStore';
 import { ShoppingCart } from 'lucide-react';
 import type { Product } from '@/lib/api';
 import Link from 'next/link';
 import Image from 'next/image';
+
+// Helper to convert Product to CartProduct
+function toCartProduct(product: Product): CartProduct {
+    return {
+        id: product.id,
+        name: product.name,
+        slug: product.slug,
+        price: product.price,
+        image: product.image,
+        stock: product.stock
+    };
+}
 
 interface MerchantProductGridProps {
     products: Product[];
@@ -83,14 +96,7 @@ export function MerchantProductGrid({ products }: MerchantProductGridProps) {
                                     </div>
                                 </div>
                                 <AddToCartButton
-                                    product={{
-                                        id: product.id,
-                                        name: product.name,
-                                        slug: product.slug,
-                                        price: product.price,
-                                        image: product.image,
-                                        stock: product.stock
-                                    }}
+                                    product={toCartProduct(product)}
                                     className="bg-neon text-black px-4 py-2 text-xs font-bold uppercase tracking-wider hover:bg-neon/90 transition-colors inline-flex items-center gap-2"
                                 />
                             </div>

@@ -5,6 +5,7 @@ import { Footer } from '@/components/Footer';
 import { Cart, CartTrigger } from '@/components/Cart';
 import { AddToCartButton } from '@/components/Cart';
 import { getProductBySlug, getProducts, type Product } from '@/lib/api';
+import { type CartProduct } from '@/store/useCartStore';
 import { Star, ShoppingCart, Truck, Shield, CheckCircle, ArrowLeft, Zap, Award } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -92,6 +93,18 @@ export async function generateStaticParams() {
     return products.map((product) => ({
         slug: product.slug,
     }));
+}
+
+// Helper to convert Product to CartProduct
+function toCartProduct(product: Product): CartProduct {
+    return {
+        id: product.id,
+        name: product.name,
+        slug: product.slug,
+        price: product.price,
+        image: product.image,
+        stock: product.stock
+    };
 }
 
 export default async function ProductDetailPage({ params }: ProductDetailPageProps) {
@@ -356,14 +369,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
 
                                 <div className="flex flex-col sm:flex-row gap-3">
                                     <AddToCartButton
-                                        product={{
-                                            id: product.id,
-                                            name: product.name,
-                                            slug: product.slug,
-                                            price: product.price,
-                                            image: product.image,
-                                            stock: product.stock,
-                                        }}
+                                        product={toCartProduct(product)}
                                         className="flex-1 bg-neon text-black py-4 text-sm font-bold uppercase tracking-wider hover:bg-neon/90 transition-colors justify-center"
                                     />
                                     <a

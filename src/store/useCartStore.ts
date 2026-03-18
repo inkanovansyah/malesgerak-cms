@@ -1,10 +1,20 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { CartItem, Product } from '@/lib/api';
+import type { CartItem } from '@/lib/api';
+
+// Simplified product type for cart (only needs essential fields)
+export interface CartProduct {
+    id: string;
+    name: string;
+    slug: string;
+    price: number;
+    image: string;
+    stock?: number;
+}
 
 interface CartStoreItem {
     key: string;
-    product: Product;
+    product: CartProduct;
     quantity: number;
     variation_id?: string;
 }
@@ -15,7 +25,7 @@ interface CartState {
     isLoading: boolean;
 
     // Actions
-    addItem: (product: Product, quantity?: number, variationId?: string) => void;
+    addItem: (product: CartProduct, quantity?: number, variationId?: string) => void;
     removeItem: (key: string) => void;
     updateQuantity: (key: string, quantity: number) => void;
     clearCart: () => void;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCartStore } from '@/store/useCartStore';
+import { useCartStore, type CartProduct } from '@/store/useCartStore';
 import { X, Plus, Minus, ShoppingBag, Trash2, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect } from 'react';
@@ -208,14 +208,7 @@ export function CartTrigger() {
 
 // Add to Cart Button
 interface AddToCartButtonProps {
-    product: {
-        id: string;
-        name: string;
-        slug: string;
-        price: number;
-        image: string;
-        stock?: number;
-    };
+    product: CartProduct;
     quantity?: number;
     className?: string;
     onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
