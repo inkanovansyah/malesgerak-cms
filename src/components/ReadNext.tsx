@@ -59,10 +59,10 @@ export function ReadNext({ currentArticleId }: ReadNextProps) {
                 <ArticleCard
                     key={post.id}
                     id={post.slug}
-                    category={post.category[0] || "News"}
+                    category={post.category?.[0]?.name || "News"}
                     title={post.title}
                     excerpt={""} // Helper text not needed for sidebars usually
-                    author={post.author}
+                    author={post.author?.name || post.author || "Unknown"}
                     date={new Date(post.publishedAt).toLocaleDateString('en-GB', {
                         day: '2-digit',
                         month: 'short',

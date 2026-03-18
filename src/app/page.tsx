@@ -25,8 +25,9 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
   // For filtered categories, start from beginning
   const initialOffset = selectedTagId === "ALL" ? 8 : 0;
 
-  const [trendingArticles, latestArticles, categories, allTags] = await Promise.all([
+  const [trendingArticles, heroArticles, latestArticles, categories, allTags] = await Promise.all([
     getTrendingArticles(),
+    getLatestArticles("ALL", 1, 8, 0),  // Hero: first 8 articles
     getLatestArticles(selectedTagId, 1, 8, initialOffset),
     getTags(),  // Categories for filtering
     getAllTags()  // All tags for display
@@ -36,7 +37,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
     <main className="min-h-screen bg-background text-foreground selection:bg-neon selection:text-black">
       <Navbar />
       <AdBanner />
-      <Hero />
+      <Hero articles={heroArticles} />
       {/* <TrendingNews articles={trendingArticles} /> */}
       <YouTubeShorts />
       <AdBanner />

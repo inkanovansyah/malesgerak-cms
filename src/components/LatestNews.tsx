@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArticleCard } from "@/components/ArticleCard";
 import { ChevronRight } from "lucide-react";
@@ -22,27 +22,42 @@ export function LatestNews({ initialArticles, categories, allTags, trendingArtic
     const [currentPage, setCurrentPage] = useState(1);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
 
+    // Track which filtered categories have been initialized
+    const initializedCategories = useRef<Set<string | number>>(new Set());
+
     // Hero shows 8 articles, so ALL tab starts from offset 8
     const INITIAL_OFFSET_ALL = 8;
     const PER_PAGE = 8;
 
     // Fetch articles when tag changes (non-ALL tabs)
     const { data: articles, isLoading, isFetching } = useQuery({
-        queryKey: ['latest-news', selectedTag],
-        queryFn: () => getLatestArticles(selectedTag, 1, PER_PAGE, 0), // No offset for filtered categories
+        queryKey: ['latest-news', selectedTag, currentPage],
+        queryFn: () => {
+            // Calculate offset: for non-ALL, it's based on articles we've already loaded
+            const previousPagesArticles = (currentPage - 1) * PER_PAGE;
+            return getLatestArticles(selectedTag, currentPage, PER_PAGE, previousPagesArticles);
+        },
         enabled: selectedTag !== defaultTag,
     });
 
-    // Update articles when tag changes and data is fetched
+    // Update articles when tag changes (not on every data update)
     useEffect(() => {
-        if (selectedTag !== defaultTag && articles) {
-            setAllArticles(articles);
-            setCurrentPage(1);
-        } else if (selectedTag === defaultTag) {
+        // Reset to initial articles when switching back to ALL
+        if (selectedTag === defaultTag) {
             setAllArticles(initialArticles);
             setCurrentPage(1);
+            // Clear initialized categories when switching to ALL
+            initializedCategories.current.clear();
         }
-    }, [selectedTag, articles, initialArticles, defaultTag]);
+    }, [selectedTag, initialArticles, defaultTag]);
+
+    // Initialize allArticles when filtered category loads for the first time
+    useEffect(() => {
+        if (selectedTag !== defaultTag && articles && articles.length > 0 && currentPage === 1 && !initializedCategories.current.has(selectedTag)) {
+            setAllArticles(articles);
+            initializedCategories.current.add(selectedTag);
+        }
+    }, [selectedTag, articles, currentPage, defaultTag]);
 
     const displayedArticles = selectedTag === defaultTag ? allArticles : (articles || []);
 
@@ -53,15 +68,21 @@ export function LatestNews({ initialArticles, categories, allTags, trendingArtic
         try {
             const nextPage = currentPage + 1;
 
-            // Calculate offset based on current articles count
-            // For ALL tab: we already have INITIAL_OFFSET_ALL (8) from Hero + current articles
-            // For other tabs: just use current articles count
-            const currentCount = displayedArticles.length;
-            const offset = selectedTag === "ALL"
-                ? INITIAL_OFFSET_ALL + currentCount
-                : currentCount;
+            // For ALL tab: use the manual fetch with offset
+            // For filtered categories: use the useQuery data
+            let moreArticles: Article[] = [];
 
-            const moreArticles = await getLatestArticles(selectedTag, nextPage, PER_PAGE, offset);
+            if (selectedTag === "ALL") {
+                // Calculate offset: we already have INITIAL_OFFSET_ALL (8) from Hero + current articles
+                const currentCount = displayedArticles.length;
+                const offset = INITIAL_OFFSET_ALL + currentCount;
+
+                moreArticles = await getLatestArticles(selectedTag, nextPage, PER_PAGE, offset);
+            } else {
+                // For filtered categories, fetch next page and append
+                const offset = displayedArticles.length;
+                moreArticles = await getLatestArticles(selectedTag, nextPage, PER_PAGE, offset);
+            }
 
             if (moreArticles.length > 0) {
                 setAllArticles(prev => [...prev, ...moreArticles]);
@@ -72,7 +93,7 @@ export function LatestNews({ initialArticles, categories, allTags, trendingArtic
         } finally {
             setIsLoadingMore(false);
         }
-    }, [currentPage, selectedTag, isLoadingMore, displayedArticles.length]);
+    }, [currentPage, selectedTag, isLoadingMore, getLatestArticles]);
 
     const handleTagClick = (tag: Tag | "ALL") => {
         const tagIdentifier = tag === "ALL" ? "ALL" : tag.id;
@@ -84,7 +105,8 @@ export function LatestNews({ initialArticles, categories, allTags, trendingArtic
         ...(categories || [])
     ];
 
-    const hasMore = displayedArticles.length >= PER_PAGE && displayedArticles.length % PER_PAGE === 0;
+    // Check if there are more articles to load
+    const hasMore = displayedArticles.length >= PER_PAGE && displayedArticles.length % PER_PAGE === 0 && !isFetching;
 
     return (
         <section className="py-12 border-t border-border bg-background">

@@ -15,6 +15,14 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'api.maknauang.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'maknauang.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.maknauang.com',
+      },
     ],
   },
   async rewrites() {
