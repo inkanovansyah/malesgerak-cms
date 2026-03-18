@@ -5,8 +5,57 @@ import { Footer } from "@/components/Footer";
 import { Star, ShoppingCart, Zap, Battery, Sun, CheckCircle, Award } from "lucide-react";
 
 export const metadata: Metadata = {
-    title: "Merchant - Panel Surya | MaknaUang",
-    description: "Jual panel surya berkualitas dengan harga terbaik. Solusi energi terbarukan untuk kebutuhan Anda.",
+    title: "Jual Panel Surya Makna Uang - Harga Terbaik 2026 | Merchant",
+    description: "Jual panel surya Makna Uang berkualitas dengan harga terbaik mulai Rp 850.000. Tersedia panel 100WP - 550WP, paket off-grid lengkap. Garansi 25-30 tahun. Solusi energi terbarukan untuk rumah & komersial.",
+    keywords: "panel surya, jual panel surya, harga panel surya, panel surya makna uang, energi terbarukan, solar panel, panel surya murah, makna uang solar",
+    authors: [{ name: "MaknaUang" }],
+    creator: "MaknaUang",
+    publisher: "MaknaUang",
+    formatDetection: {
+        email: false,
+        address: false,
+        telephone: false,
+    },
+    metadataBase: new URL('https://www.maknauang.com'),
+    alternates: {
+        canonical: '/merchant',
+    },
+    openGraph: {
+        type: 'website',
+        locale: 'id_ID',
+        url: 'https://www.maknauang.com/merchant',
+        title: 'Jual Panel Surya Makna Uang - Harga Terbaik 2026',
+        description: 'Jual panel surya Makna Uang berkualitas dengan harga terbaik. Tersedia panel 100WP - 550WP, paket off-grid lengkap. Garansi 25-30 tahun.',
+        siteName: 'MaknaUang',
+        images: [
+            {
+                url: 'https://images.unsplash.com/photo-1509391366360-2e959784a276?w=1200&q=80',
+                width: 1200,
+                height: 630,
+                alt: 'Panel Surya Makna Uang'
+            }
+        ]
+    },
+    twitter: {
+        card: 'summary_large_image',
+        title: 'Jual Panel Surya Makna Uang - Harga Terbaik 2026',
+        description: 'Jual panel surya Makna Uang berkualitas dengan harga terbaik. Tersedia panel 100WP - 550WP, paket off-grid lengkap.',
+        images: ['https://images.unsplash.com/photo-1509391366360-2e959784a276?w=1200&q=80'],
+    },
+    robots: {
+        index: true,
+        follow: true,
+        googleBot: {
+            index: true,
+            follow: true,
+            'max-video-preview': -1,
+            'max-image-preview': 'large',
+            'max-snippet': -1,
+        },
+    },
+    verification: {
+        google: 'your-google-verification-code',
+    }
 };
 
 // Hardcoded panel surya data - Produk Makna Uang
@@ -169,8 +218,93 @@ export default function MerchantPage() {
     const totalReviews = REVIEWS.length;
     const averageRating = REVIEWS.reduce((sum, r) => sum + r.rating, 0) / totalReviews;
 
+    // Structured Data for SEO
+    const structuredData = {
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        "name": "Panel Surya Makna Uang",
+        "description": "Jual panel surya berkualitas dengan harga terbaik. Solusi energi terbarukan untuk kebutuhan rumah tangga dan komersial.",
+        "url": "https://www.maknauang.com/merchant",
+        "numberOfItems": PANEL_SURYA.length,
+        "itemListElement": PANEL_SURYA.map((panel, index) => ({
+            "@type": "ListItem",
+            "position": index + 1,
+            "item": {
+                "@type": "Product",
+                "name": panel.name,
+                "brand": {
+                    "@type": "Brand",
+                    "name": panel.brand
+                },
+                "image": panel.image,
+                "description": panel.description,
+                "offers": {
+                    "@type": "Offer",
+                    "price": panel.price,
+                    "priceCurrency": "IDR",
+                    "availability": "https://schema.org/InStock",
+                    "url": `https://www.maknauang.com/merchant#${panel.id}`
+                },
+                "aggregateRating": {
+                    "@type": "AggregateRating",
+                    "ratingValue": averageRating,
+                    "reviewCount": totalReviews,
+                    "bestRating": 5,
+                    "worstRating": 1
+                }
+            }
+        }))
+    };
+
+    const reviewData = {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        "name": "Panel Surya Makna Uang",
+        "image": "https://images.unsplash.com/photo-1509391366360-2e959784a276?w=800&q=80",
+        "description": "Jual panel surya berkualitas dengan harga terbaik. Solusi energi terbarukan untuk kebutuhan rumah tangga dan komersial.",
+        "brand": {
+            "@type": "Brand",
+            "name": "MAKNA UANG"
+        },
+        "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": averageRating,
+            "reviewCount": totalReviews,
+            "bestRating": 5,
+            "worstRating": 1
+        },
+        "review": REVIEWS.map(review => ({
+            "@type": "Review",
+            "author": {
+                "@type": "Person",
+                "name": review.name
+            },
+            "reviewRating": {
+                "@type": "Rating",
+                "ratingValue": review.rating,
+                "bestRating": 5
+            },
+            "reviewBody": review.comment,
+            "datePublished": review.date
+        }))
+    };
+
     return (
         <main className="min-h-screen bg-background text-foreground selection:bg-neon selection:text-black">
+            {/* Structured Data for SEO */}
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify(structuredData)
+                }}
+            />
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify(reviewData)
+                }}
+            />
+
             <Navbar />
 
             {/* Hero Section */}
