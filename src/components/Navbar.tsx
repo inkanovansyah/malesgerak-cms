@@ -1,15 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { Search } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { Search, Sun } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 
-export function Navbar() {
+interface NavbarProps {
+    cartTrigger?: React.ReactNode;
+}
+
+export function Navbar({ cartTrigger }: NavbarProps) {
+    const pathname = usePathname();
     const [scrolled, setScrolled] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
+
+    // Check if current page is merchant or merchant product detail
+    const isMerchantPage = pathname?.startsWith('/merchant') || false;
 
     // ... scroll effect ...
     useEffect(() => {
@@ -112,6 +121,7 @@ export function Navbar() {
                     </div>
 
                     <div className={cn("flex items-center gap-6 text-foreground transition-opacity duration-300", isSearchOpen ? "opacity-0" : "opacity-100")}>
+                        {cartTrigger}
                         <ThemeToggle />
                     </div>
                 </div>
@@ -121,20 +131,41 @@ export function Navbar() {
             <nav className={cn("bg-transparent transition-all duration-300", scrolled ? "py-2 border-b-0" : "py-3 border-b border-border")}>
                 {/* ... existing nav content ... */}
                 <div className="container mx-auto flex w-full items-center justify-start md:justify-center px-4 md:px-8 overflow-x-auto no-scrollbar">
-                    <div className="flex gap-8 text-[10px] font-bold tracking-widest text-muted-foreground whitespace-nowrap">
+                    <div className="flex gap-6 md:gap-8 text-[10px] font-bold tracking-widest text-muted-foreground whitespace-nowrap">
                         {[
                             { name: "NEWS", href: "/news" },
                             { name: "HOT NEWS", href: "/hotnews" },
-                            { name: "MERCHANT", href: "/merchant" },
+                            { name: "MERCHANT SOLAR", href: "/merchant", icon: Sun },
                             // { name: "ADVERTISE", href: "/contact" },
                             { name: "ABOUT", href: "/about" },
                             { name: "SUPPORT/FAQ", href: "/contact" },
                             { name: "PRIVACY", href: "/privacy" },
-                        ].map((item) => (
-                            <Link key={item.name} href={item.href} className="hover:text-neon transition-colors">
-                                {item.name}
-                            </Link>
-                        ))}
+                        ].map((item) => {
+                            const isActive = item.name === "MERCHANT SOLAR" ? isMerchantPage : pathname === item.href;
+                            const Icon = item.icon;
+
+                            return (
+                                <Link
+                                    key={item.name}
+                                    href={item.href}
+                                    className={cn(
+                                        "flex items-center gap-1.5 hover:text-neon transition-colors",
+                                        isActive && "text-neon"
+                                    )}
+                                >
+                                    {Icon && (
+                                        <Icon
+                                            className={cn(
+                                                "w-3.5 h-3.5 transition-colors",
+                                                // Yellow sun when merchant page is active
+                                                item.name === "MERCHANT SOLAR" && isMerchantPage && "text-yellow-400 fill-yellow-400"
+                                            )}
+                                        />
+                                    )}
+                                    <span>{item.name}</span>
+                                </Link>
+                            );
+                        })}
                     </div>
                 </div>
             </nav>

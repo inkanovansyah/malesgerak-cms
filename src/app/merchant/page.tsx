@@ -2,7 +2,10 @@ import Link from "next/link";
 import { Metadata } from "next";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { Cart, CartTrigger } from "@/components/Cart";
 import { Star, ShoppingCart, Zap, Battery, Sun, CheckCircle, Award } from "lucide-react";
+import { getProducts, type Product } from "@/lib/api";
+import { MerchantProductGrid } from "@/components/MerchantProductGrid";
 
 export const metadata: Metadata = {
     title: "Jual Panel Surya Makna Uang - Harga Terbaik 2026 | Merchant",
@@ -27,20 +30,15 @@ export const metadata: Metadata = {
         title: 'Jual Panel Surya Makna Uang - Harga Terbaik 2026',
         description: 'Jual panel surya Makna Uang berkualitas dengan harga terbaik. Tersedia panel 100WP - 550WP, paket off-grid lengkap. Garansi 25-30 tahun.',
         siteName: 'MaknaUang',
-        images: [
-            {
-                url: 'https://images.unsplash.com/photo-1509391366360-2e959784a276?w=1200&q=80',
-                width: 1200,
-                height: 630,
-                alt: 'Panel Surya Makna Uang'
-            }
-        ]
+        // OG Image will be automatically served from /opengraph-image route
+        images: ['/opengraph-image'],
     },
     twitter: {
         card: 'summary_large_image',
         title: 'Jual Panel Surya Makna Uang - Harga Terbaik 2026',
         description: 'Jual panel surya Makna Uang berkualitas dengan harga terbaik. Tersedia panel 100WP - 550WP, paket off-grid lengkap.',
-        images: ['https://images.unsplash.com/photo-1509391366360-2e959784a276?w=1200&q=80'],
+        // Twitter Image will be automatically served from /twitter-image route
+        images: ['/twitter-image'],
     },
     robots: {
         index: true,
@@ -58,101 +56,7 @@ export const metadata: Metadata = {
     }
 };
 
-// Hardcoded panel surya data - Produk Makna Uang
-const PANEL_SURYA = [
-    {
-        id: 1,
-        name: "Makna Uang Solar 100WP",
-        brand: "MAKNA UANG",
-        price: 850000,
-        power: "100WP",
-        type: "Monocrystalline",
-        efficiency: "18%",
-        dimensions: "1040 x 540 x 35mm",
-        weight: "8.5 kg",
-        warranty: "25 Tahun",
-        features: ["Tahan Cuaca IP67", "Frame Aluminium", "Kaca Tempered"],
-        image: "https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=800&q=80",
-        description: "Panel Surya Makna Uang 100WP ideal untuk rumah tangga kecil, lampu jalan, dan aplikasi off-grid."
-    },
-    {
-        id: 2,
-        name: "Makna Uang Solar 200WP",
-        brand: "MAKNA UANG",
-        price: 1500000,
-        power: "200WP",
-        type: "Polycrystalline",
-        efficiency: "16%",
-        dimensions: "1480 x 680 x 35mm",
-        weight: "15 kg",
-        warranty: "25 Tahun",
-        features: ["Efisiensi Tinggi", "Tahan Karat", "Anti-Reflection"],
-        image: "https://images.unsplash.com/photo-1509391366360-2e959784a276?w=800&q=80",
-        description: "Panel Surya Makna Uang 200WP cocok untuk rumah tangga menengah dan aplikasi komersial kecil."
-    },
-    {
-        id: 3,
-        name: "Makna Uang Solar 300WP Premium",
-        brand: "MAKNA UANG",
-        price: 2200000,
-        power: "300WP",
-        type: "Monocrystalline Premium",
-        efficiency: "20%",
-        dimensions: "1955 x 992 x 40mm",
-        weight: "22 kg",
-        warranty: "25 Tahun",
-        features: ["PERC Technology", "PID Free", "High Output"],
-        image: "https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=800&q=80",
-        description: "Panel Surya Makna Uang Premium 300WP untuk instalasi rumah tangga besar dan komersial."
-    },
-    {
-        id: 4,
-        name: "Makna Uang Solar 450WP Bifacial",
-        brand: "MAKNA UANG",
-        price: 3500000,
-        power: "450WP",
-        type: "Bifacial Monocrystalline",
-        efficiency: "21%",
-        dimensions: "2100 x 1040 x 35mm",
-        weight: "28 kg",
-        warranty: "30 Tahun",
-        features: ["Bifacial Technology", "Dual Side Power", "Ultra Efficient"],
-        image: "https://images.unsplash.com/photo-1497440001374-f26997328c1b?w=800&q=80",
-        description: "Panel Surya Makna Uang Bifacial 450WP menghasilkan energi dari kedua sisi, output hingga 30% lebih tinggi."
-    },
-    {
-        id: 5,
-        name: "Makna Uang Solar 550WP Half-Cut",
-        brand: "MAKNA UANG",
-        price: 4500000,
-        power: "550WP",
-        type: "Half-Cut Monocrystalline",
-        efficiency: "22%",
-        dimensions: "2278 x 1134 x 35mm",
-        weight: "32 kg",
-        warranty: "30 Tahun",
-        features: ["Half-Cut Cell", "Low Irradiance", "Shadow Tolerant"],
-        image: "https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=800&q=80",
-        description: "Panel Surya Makna Uang 550WP dengan teknologi half-cut untuk performa maksimal dalam kondisi bayangan."
-    },
-    {
-        id: 6,
-        name: "Makna Uang Solar Paket 1kWp Off-Grid",
-        brand: "MAKNA UANG",
-        price: 12000000,
-        power: "1000WP (1kWp)",
-        type: "Paket Lengkap",
-        efficiency: "-",
-        dimensions: "-",
-        weight: "-",
-        warranty: "25 Tahun Panel + 2 Tahun Komponen",
-        features: ["4 Panel 250WP", "Inverter 1kW", "Baterai 200Ah", "Instalasi Lengkap"],
-        image: "https://images.unsplash.com/photo-1509391366360-2e959784a276?w=800&q=80",
-        description: "Paket Lengkap Panel Surya Makna Uang Off-Grid untuk rumah mandiri. Termasuk panel, inverter, baterai, dan instalasi."
-    }
-];
-
-// Hardcoded reviews
+// Hardcoded reviews - tetap menggunakan data yang sama
 const REVIEWS = [
     {
         id: 1,
@@ -210,47 +114,174 @@ const REVIEWS = [
     }
 ];
 
-function formatPrice(price: number): string {
-    return new Intl.NumberFormat('id-ID').format(price);
+// Fallback hardcoded products for when API is not available
+const FALLBACK_PRODUCTS: Product[] = [
+    {
+        id: "1",
+        name: "Makna Uang Solar 100WP",
+        slug: "makna-uang-solar-100wp",
+        brand: "MAKNA UANG",
+        price: 850000,
+        power: "100WP",
+        type: "Monocrystalline",
+        efficiency: "18%",
+        dimensions: "1040 x 540 x 35mm",
+        weight: "8.5 kg",
+        warranty: "25 Tahun",
+        features: ["Tahan Cuaca IP67", "Frame Aluminium", "Kaca Tempered"],
+        image: "https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=800&q=80",
+        description: "Panel Surya Makna Uang 100WP ideal untuk rumah tangga kecil, lampu jalan, dan aplikasi off-grid.",
+        stock: 10,
+        status: "available"
+    },
+    {
+        id: "2",
+        name: "Makna Uang Solar 200WP",
+        slug: "makna-uang-solar-200wp",
+        brand: "MAKNA UANG",
+        price: 1500000,
+        power: "200WP",
+        type: "Polycrystalline",
+        efficiency: "16%",
+        dimensions: "1480 x 680 x 35mm",
+        weight: "15 kg",
+        warranty: "25 Tahun",
+        features: ["Efisiensi Tinggi", "Tahan Karat", "Anti-Reflection"],
+        image: "https://images.unsplash.com/photo-1509391366360-2e959784a276?w=800&q=80",
+        description: "Panel Surya Makna Uang 200WP cocok untuk rumah tangga menengah dan aplikasi komersial kecil.",
+        stock: 10,
+        status: "available"
+    },
+    {
+        id: "3",
+        name: "Makna Uang Solar 300WP Premium",
+        slug: "makna-uang-solar-300wp-premium",
+        brand: "MAKNA UANG",
+        price: 2200000,
+        power: "300WP",
+        type: "Monocrystalline Premium",
+        efficiency: "20%",
+        dimensions: "1955 x 992 x 40mm",
+        weight: "22 kg",
+        warranty: "25 Tahun",
+        features: ["PERC Technology", "PID Free", "High Output"],
+        image: "https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=800&q=80",
+        description: "Panel Surya Makna Uang Premium 300WP untuk instalasi rumah tangga besar dan komersial.",
+        stock: 10,
+        status: "available"
+    },
+    {
+        id: "4",
+        name: "Makna Uang Solar 450WP Bifacial",
+        slug: "makna-uang-solar-450wp-bifacial",
+        brand: "MAKNA UANG",
+        price: 3500000,
+        power: "450WP",
+        type: "Bifacial Monocrystalline",
+        efficiency: "21%",
+        dimensions: "2100 x 1040 x 35mm",
+        weight: "28 kg",
+        warranty: "30 Tahun",
+        features: ["Bifacial Technology", "Dual Side Power", "Ultra Efficient"],
+        image: "https://images.unsplash.com/photo-1497440001374-f26997328c1b?w=800&q=80",
+        description: "Panel Surya Makna Uang Bifacial 450WP menghasilkan energi dari kedua sisi, output hingga 30% lebih tinggi.",
+        stock: 10,
+        status: "available"
+    },
+    {
+        id: "5",
+        name: "Makna Uang Solar 550WP Half-Cut",
+        slug: "makna-uang-solar-550wp-halfcut",
+        brand: "MAKNA UANG",
+        price: 4500000,
+        power: "550WP",
+        type: "Half-Cut Monocrystalline",
+        efficiency: "22%",
+        dimensions: "2278 x 1134 x 35mm",
+        weight: "32 kg",
+        warranty: "30 Tahun",
+        features: ["Half-Cut Cell", "Low Irradiance", "Shadow Tolerant"],
+        image: "https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=800&q=80",
+        description: "Panel Surya Makna Uang 550WP dengan teknologi half-cut untuk performa maksimal dalam kondisi bayangan.",
+        stock: 10,
+        status: "available"
+    },
+    {
+        id: "6",
+        name: "Makna Uang Solar Paket 1kWp Off-Grid",
+        slug: "makna-uang-solar-paket-1kwp-offgrid",
+        brand: "MAKNA UANG",
+        price: 12000000,
+        power: "1000WP (1kWp)",
+        type: "Paket Lengkap",
+        efficiency: "-",
+        dimensions: "-",
+        weight: "-",
+        warranty: "25 Tahun Panel + 2 Tahun Komponen",
+        features: ["4 Panel 250WP", "Inverter 1kW", "Baterai 200Ah", "Instalasi Lengkap"],
+        image: "https://images.unsplash.com/photo-1509391366360-2e959784a276?w=800&q=80",
+        description: "Paket Lengkap Panel Surya Makna Uang Off-Grid untuk rumah mandiri. Termasuk panel, inverter, baterai, dan instalasi.",
+        stock: 5,
+        status: "available"
+    }
+];
+
+async function getMerchantData() {
+    try {
+        const productsResponse = await getProducts(1, 12);
+        // If API returns no products, use fallback
+        if (!productsResponse.products || productsResponse.products.length === 0) {
+            console.log('API returned no products, using fallback data');
+            return {
+                products: FALLBACK_PRODUCTS,
+                total: FALLBACK_PRODUCTS.length
+            };
+        }
+        return {
+            products: productsResponse.products,
+            total: productsResponse.total
+        };
+    } catch (error) {
+        console.error('Failed to fetch products:', error);
+        // Return hardcoded products as fallback
+        return {
+            products: FALLBACK_PRODUCTS,
+            total: FALLBACK_PRODUCTS.length
+        };
+    }
 }
 
-export default function MerchantPage() {
+export default async function MerchantPage() {
+    const { products, total } = await getMerchantData();
     const totalReviews = REVIEWS.length;
     const averageRating = REVIEWS.reduce((sum, r) => sum + r.rating, 0) / totalReviews;
 
-    // Structured Data for SEO
+    // Structured Data for SEO - akan diupdate dengan produk dari API
     const structuredData = {
         "@context": "https://schema.org",
         "@type": "ItemList",
         "name": "Panel Surya Makna Uang",
         "description": "Jual panel surya berkualitas dengan harga terbaik. Solusi energi terbarukan untuk kebutuhan rumah tangga dan komersial.",
         "url": "https://www.maknauang.com/merchant",
-        "numberOfItems": PANEL_SURYA.length,
-        "itemListElement": PANEL_SURYA.map((panel, index) => ({
+        "numberOfItems": products.length,
+        "itemListElement": products.map((product, index) => ({
             "@type": "ListItem",
             "position": index + 1,
             "item": {
                 "@type": "Product",
-                "name": panel.name,
+                "name": product.name,
                 "brand": {
                     "@type": "Brand",
-                    "name": panel.brand
+                    "name": product.brand
                 },
-                "image": panel.image,
-                "description": panel.description,
+                "image": product.image,
+                "description": product.description,
                 "offers": {
                     "@type": "Offer",
-                    "price": panel.price,
+                    "price": product.price,
                     "priceCurrency": "IDR",
                     "availability": "https://schema.org/InStock",
-                    "url": `https://www.maknauang.com/merchant#${panel.id}`
-                },
-                "aggregateRating": {
-                    "@type": "AggregateRating",
-                    "ratingValue": averageRating,
-                    "reviewCount": totalReviews,
-                    "bestRating": 5,
-                    "worstRating": 1
+                    "url": `https://www.maknauang.com/merchant#${product.id}`
                 }
             }
         }))
@@ -260,7 +291,7 @@ export default function MerchantPage() {
         "@context": "https://schema.org",
         "@type": "Product",
         "name": "Panel Surya Makna Uang",
-        "image": "https://images.unsplash.com/photo-1509391366360-2e959784a276?w=800&q=80",
+        "image": "https://www.maknauang.com/opengraph-image",
         "description": "Jual panel surya berkualitas dengan harga terbaik. Solusi energi terbarukan untuk kebutuhan rumah tangga dan komersial.",
         "brand": {
             "@type": "Brand",
@@ -305,7 +336,10 @@ export default function MerchantPage() {
                 }}
             />
 
-            <Navbar />
+            <Navbar cartTrigger={<CartTrigger />} />
+
+            {/* Cart Component */}
+            <Cart />
 
             {/* Hero Section */}
             <section className="relative border-b border-border bg-gradient-to-br from-background via-background to-neon/5 py-20">
@@ -392,89 +426,18 @@ export default function MerchantPage() {
                         </div>
                         <div className="text-right">
                             <div className="text-sm text-muted-foreground">Tersedia</div>
-                            <div className="text-2xl font-black text-neon">{PANEL_SURYA.length} Produk</div>
+                            <div className="text-2xl font-black text-neon">{products.length} Produk</div>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {PANEL_SURYA.map((panel) => (
-                            <div key={panel.id} className="group bg-muted/20 border border-border hover:border-neon rounded-lg overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-neon/10">
-                                {/* Image */}
-                                <div className="aspect-video w-full bg-muted relative overflow-hidden">
-                                    <img
-                                        src={panel.image}
-                                        alt={panel.name}
-                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                                    />
-                                    <div className="absolute top-3 right-3">
-                                        <span className="bg-neon text-black text-xs font-bold uppercase tracking-widest px-2 py-1 rounded-sm">
-                                            {panel.power}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                {/* Content */}
-                                <div className="p-6">
-                                    {/* Brand Badge */}
-                                    <div className="mb-2">
-                                        <span className="text-[10px] font-black text-neon uppercase tracking-widest">
-                                            {panel.brand}
-                                        </span>
-                                    </div>
-                                    <h3 className="font-bold text-lg uppercase tracking-tight mb-2 group-hover:text-neon transition-colors line-clamp-1">
-                                        {panel.name}
-                                    </h3>
-                                    <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                                        {panel.description}
-                                    </p>
-
-                                    {/* Specs */}
-                                    <div className="space-y-2 mb-4 text-xs">
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Tipe:</span>
-                                            <span className="font-medium">{panel.type}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Efisiensi:</span>
-                                            <span className="font-medium">{panel.efficiency}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Garansi:</span>
-                                            <span className="font-medium text-neon">{panel.warranty}</span>
-                                        </div>
-                                    </div>
-
-                                    {/* Features */}
-                                    <div className="flex flex-wrap gap-1 mb-4">
-                                        {panel.features.slice(0, 2).map((feature, i) => (
-                                            <span key={i} className="text-[10px] bg-background border border-border px-2 py-0.5 rounded-sm">
-                                                {feature}
-                                            </span>
-                                        ))}
-                                    </div>
-
-                                    {/* Price & CTA */}
-                                    <div className="flex items-center justify-between pt-4 border-t border-border">
-                                        <div>
-                                            <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Harga</div>
-                                            <div className="text-xl font-black text-neon">
-                                                Rp {formatPrice(panel.price)}
-                                            </div>
-                                        </div>
-                                        <a
-                                            href="https://wa.me/6281234567890?text=Halo,%20saya%20tertarik%20dengan%20panel%20surya%20{encodeURIComponent(panel.name)}"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="bg-neon text-black px-4 py-2 text-xs font-bold uppercase tracking-wider hover:bg-neon/90 transition-colors inline-flex items-center gap-2"
-                                        >
-                                            <ShoppingCart className="w-3 h-3" />
-                                            Beli
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                    {/* Product Grid dengan API data */}
+                    {products.length > 0 ? (
+                        <MerchantProductGrid products={products} />
+                    ) : (
+                        <div className="text-center py-12">
+                            <p className="text-muted-foreground">Produk tidak tersedia saat ini.</p>
+                        </div>
+                    )}
                 </div>
             </section>
 

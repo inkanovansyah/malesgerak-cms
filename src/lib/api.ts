@@ -556,3 +556,678 @@ export async function getSiteStats(): Promise<{
         };
     }
 }
+
+// ============================================================================
+// MERCHANT / E-COMMERCE API
+// ============================================================================
+
+// Product Category Type
+export interface ProductCategory {
+    id: number;
+    name: string;
+    slug: string;
+    description?: string;
+    count?: number;
+    image?: string;
+}
+
+// Products Response with Pagination
+export interface ProductsResponse {
+    products: Product[];
+    total: number;
+    totalPages: number;
+    currentPage: number;
+}
+
+// Fallback hardcoded products for when API is not available
+const FALLBACK_PRODUCTS_MAP: Record<string, Product> = {
+    "makna-uang-solar-100wp": {
+        id: "1",
+        name: "Makna Uang Solar 100WP",
+        slug: "makna-uang-solar-100wp",
+        brand: "MAKNA UANG",
+        price: 850000,
+        power: "100WP",
+        type: "Monocrystalline",
+        efficiency: "18%",
+        dimensions: "1040 x 540 x 35mm",
+        weight: "8.5 kg",
+        warranty: "25 Tahun",
+        features: ["Tahan Cuaca IP67", "Frame Aluminium", "Kaca Tempered"],
+        image: "https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=800&q=80",
+        description: "Panel Surya Makna Uang 100WP ideal untuk rumah tangga kecil, lampu jalan, dan aplikasi off-grid.",
+        stock: 10,
+        status: "available"
+    },
+    "makna-uang-solar-200wp": {
+        id: "2",
+        name: "Makna Uang Solar 200WP",
+        slug: "makna-uang-solar-200wp",
+        brand: "MAKNA UANG",
+        price: 1500000,
+        power: "200WP",
+        type: "Polycrystalline",
+        efficiency: "16%",
+        dimensions: "1480 x 680 x 35mm",
+        weight: "15 kg",
+        warranty: "25 Tahun",
+        features: ["Efisiensi Tinggi", "Tahan Karat", "Anti-Reflection"],
+        image: "https://images.unsplash.com/photo-1509391366360-2e959784a276?w=800&q=80",
+        description: "Panel Surya Makna Uang 200WP cocok untuk rumah tangga menengah dan aplikasi komersial kecil.",
+        stock: 10,
+        status: "available"
+    },
+    "makna-uang-solar-300wp-premium": {
+        id: "3",
+        name: "Makna Uang Solar 300WP Premium",
+        slug: "makna-uang-solar-300wp-premium",
+        brand: "MAKNA UANG",
+        price: 2200000,
+        power: "300WP",
+        type: "Monocrystalline Premium",
+        efficiency: "20%",
+        dimensions: "1955 x 992 x 40mm",
+        weight: "22 kg",
+        warranty: "25 Tahun",
+        features: ["PERC Technology", "PID Free", "High Output"],
+        image: "https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=800&q=80",
+        description: "Panel Surya Makna Uang Premium 300WP untuk instalasi rumah tangga besar dan komersial.",
+        stock: 10,
+        status: "available"
+    },
+    "makna-uang-solar-450wp-bifacial": {
+        id: "4",
+        name: "Makna Uang Solar 450WP Bifacial",
+        slug: "makna-uang-solar-450wp-bifacial",
+        brand: "MAKNA UANG",
+        price: 3500000,
+        power: "450WP",
+        type: "Bifacial Monocrystalline",
+        efficiency: "21%",
+        dimensions: "2100 x 1040 x 35mm",
+        weight: "28 kg",
+        warranty: "30 Tahun",
+        features: ["Bifacial Technology", "Dual Side Power", "Ultra Efficient"],
+        image: "https://images.unsplash.com/photo-1497440001374-f26997328c1b?w=800&q=80",
+        description: "Panel Surya Makna Uang Bifacial 450WP menghasilkan energi dari kedua sisi, output hingga 30% lebih tinggi.",
+        stock: 10,
+        status: "available"
+    },
+    "makna-uang-solar-550wp-halfcut": {
+        id: "5",
+        name: "Makna Uang Solar 550WP Half-Cut",
+        slug: "makna-uang-solar-550wp-halfcut",
+        brand: "MAKNA UANG",
+        price: 4500000,
+        power: "550WP",
+        type: "Half-Cut Monocrystalline",
+        efficiency: "22%",
+        dimensions: "2278 x 1134 x 35mm",
+        weight: "32 kg",
+        warranty: "30 Tahun",
+        features: ["Half-Cut Cell", "Low Irradiance", "Shadow Tolerant"],
+        image: "https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=800&q=80",
+        description: "Panel Surya Makna Uang 550WP dengan teknologi half-cut untuk performa maksimal dalam kondisi bayangan.",
+        stock: 10,
+        status: "available"
+    },
+    "makna-uang-solar-paket-1kwp-offgrid": {
+        id: "6",
+        name: "Makna Uang Solar Paket 1kWp Off-Grid",
+        slug: "makna-uang-solar-paket-1kwp-offgrid",
+        brand: "MAKNA UANG",
+        price: 12000000,
+        power: "1000WP (1kWp)",
+        type: "Paket Lengkap",
+        efficiency: "-",
+        dimensions: "-",
+        weight: "-",
+        warranty: "25 Tahun Panel + 2 Tahun Komponen",
+        features: ["4 Panel 250WP", "Inverter 1kW", "Baterai 200Ah", "Instalasi Lengkap"],
+        image: "https://images.unsplash.com/photo-1509391366360-2e959784a276?w=800&q=80",
+        description: "Paket Lengkap Panel Surya Makna Uang Off-Grid untuk rumah mandiri. Termasuk panel, inverter, baterai, dan instalasi.",
+        stock: 5,
+        status: "available"
+    }
+};
+
+// Get all products with pagination
+export async function getProducts(page: number = 1, perPage: number = 12, category?: string): Promise<ProductsResponse> {
+    try {
+        let url = `https://api.maknauang.com/wp-json/myapi/v1/products?page=${page}&per_page=${perPage}`;
+        if (category) {
+            url += `&category=${category}`;
+        }
+
+        const response = await axios.get(url);
+
+        // Handle different response formats
+        let products: any[] = [];
+        let total = 0;
+        let totalPages = 1;
+
+        if (Array.isArray(response.data)) {
+            products = response.data;
+            total = response.headers?.['x-wp-total'] ? parseInt(response.headers['x-wp-total']) : products.length;
+            totalPages = response.headers?.['x-wp-totalpages'] ? parseInt(response.headers['x-wp-totalpages']) : 1;
+        } else if (response.data?.data && Array.isArray(response.data.data)) {
+            products = response.data.data;
+            total = response.data.total || products.length;
+            totalPages = response.data.total_pages || 1;
+        } else if (response.data?.products && Array.isArray(response.data.products)) {
+            products = response.data.products;
+            total = response.data.total || products.length;
+            totalPages = response.data.total_pages || 1;
+        }
+
+        return {
+            products: products.map((item: any) => ({
+                id: item.id?.toString() || '',
+                name: item.name || item.title?.rendered || '',
+                slug: item.slug || '',
+                brand: item.brand || 'MAKNA UANG',
+                price: parseInt(item.price) || 0,
+                power: item.power || item.attributes?.power || '-',
+                type: item.type || item.attributes?.type || '-',
+                efficiency: item.efficiency || item.attributes?.efficiency || '-',
+                dimensions: item.dimensions || item.attributes?.dimensions || '-',
+                weight: item.weight || item.attributes?.weight || '-',
+                warranty: item.warranty || item.attributes?.warranty || '-',
+                features: item.features || item.attributes?.features || [],
+                image: item.image || item.featured_media?.source_url || item.images?.[0] || '',
+                description: item.description || item.excerpt?.rendered?.replace(/<[^>]*>/g, '') || '',
+                stock: item.stock ?? item.stock_status === 'instock' ? 10 : 0,
+                status: item.stock_status === 'instock' ? 'available' as const : 'out-of-stock' as const
+            })),
+            total,
+            totalPages,
+            currentPage: page
+        };
+    } catch (error) {
+        console.error('Failed to fetch products:', error);
+        // Return fallback hardcoded products
+        const fallbackProducts = Object.values(FALLBACK_PRODUCTS_MAP);
+        return {
+            products: fallbackProducts,
+            total: fallbackProducts.length,
+            totalPages: 1,
+            currentPage: 1
+        };
+    }
+}
+
+// Get single product by slug
+export async function getProductBySlug(slug: string): Promise<Product | null> {
+    try {
+        const response = await axios.get(`https://api.maknauang.com/wp-json/myapi/v1/products/${slug}`);
+
+        if (response.data && (response.data.id || response.data.name)) {
+            const item = response.data;
+            return {
+                id: item.id?.toString() || '',
+                name: item.name || item.title?.rendered || '',
+                slug: item.slug || slug,
+                brand: item.brand || 'MAKNA UANG',
+                price: parseInt(item.price) || 0,
+                power: item.power || item.attributes?.power || '-',
+                type: item.type || item.attributes?.type || '-',
+                efficiency: item.efficiency || item.attributes?.efficiency || '-',
+                dimensions: item.dimensions || item.attributes?.dimensions || '-',
+                weight: item.weight || item.attributes?.weight || '-',
+                warranty: item.warranty || item.attributes?.warranty || '-',
+                features: item.features || item.attributes?.features || [],
+                image: item.image || item.featured_media?.source_url || item.images?.[0] || '',
+                description: item.description || item.excerpt?.rendered?.replace(/<[^>]*>/g, '') || '',
+                stock: item.stock ?? item.stock_status === 'instock' ? 10 : 0,
+                status: item.stock_status === 'instock' ? 'available' as const : 'out-of-stock' as const
+            };
+        }
+
+        // API returned no data, try fallback
+        const fallbackProduct = FALLBACK_PRODUCTS_MAP[slug];
+        if (fallbackProduct) {
+            console.log(`Using fallback product for slug: ${slug}`);
+            return fallbackProduct;
+        }
+
+        return null;
+    } catch (error) {
+        console.error(`Failed to fetch product ${slug}:`, error);
+        // Try fallback on error
+        const fallbackProduct = FALLBACK_PRODUCTS_MAP[slug];
+        if (fallbackProduct) {
+            console.log(`Using fallback product for slug: ${slug}`);
+            return fallbackProduct;
+        }
+        return null;
+    }
+}
+
+// Get product categories
+export async function getProductCategories(): Promise<ProductCategory[]> {
+    try {
+        const response = await axios.get('https://api.maknauang.com/wp-json/myapi/v1/product-categories');
+
+        if (Array.isArray(response.data)) {
+            return response.data.map((cat: any) => ({
+                id: cat.id,
+                name: cat.name,
+                slug: cat.slug,
+                description: cat.description,
+                count: cat.count,
+                image: cat.image
+            }));
+        }
+
+        return [];
+    } catch (error) {
+        console.error('Failed to fetch product categories:', error);
+        return [];
+    }
+}
+
+// ============================================================================
+// CART API TYPES
+// ============================================================================
+
+export interface CartItem {
+    key: string;
+    product_id: string;
+    quantity: number;
+    variation_id?: string;
+    product: {
+        id: string;
+        name: string;
+        slug: string;
+        price: number;
+        image: string;
+        stock?: number;
+    };
+}
+
+export interface CartResponse {
+    items: CartItem[];
+    subtotal: number;
+    total: number;
+    currency: string;
+}
+
+// ============================================================================
+// CART API FUNCTIONS
+// ============================================================================
+
+// Get cart items
+export async function getCart(): Promise<CartResponse> {
+    try {
+        const response = await axios.get('https://api.maknauang.com/wp-json/myapi/v1/cart', {
+            withCredentials: true
+        });
+
+        if (response.data) {
+            return {
+                items: response.data.items || [],
+                subtotal: response.data.subtotal || 0,
+                total: response.data.total || 0,
+                currency: response.data.currency || 'IDR'
+            };
+        }
+
+        return { items: [], subtotal: 0, total: 0, currency: 'IDR' };
+    } catch (error) {
+        console.error('Failed to fetch cart:', error);
+        return { items: [], subtotal: 0, total: 0, currency: 'IDR' };
+    }
+}
+
+// Add item to cart
+export async function addToCart(productId: string, quantity: number = 1, variationId?: string): Promise<CartResponse> {
+    try {
+        const response = await axios.post(
+            'https://api.maknauang.com/wp-json/myapi/v1/cart/add',
+            {
+                product_id: productId,
+                quantity,
+                variation_id: variationId
+            },
+            { withCredentials: true }
+        );
+
+        if (response.data) {
+            return {
+                items: response.data.items || [],
+                subtotal: response.data.subtotal || 0,
+                total: response.data.total || 0,
+                currency: response.data.currency || 'IDR'
+            };
+        }
+
+        return { items: [], subtotal: 0, total: 0, currency: 'IDR' };
+    } catch (error) {
+        console.error('Failed to add to cart:', error);
+        throw error;
+    }
+}
+
+// Update cart item quantity
+export async function updateCartItem(cartItemKey: string, quantity: number): Promise<CartResponse> {
+    try {
+        const response = await axios.post(
+            'https://api.maknauang.com/wp-json/myapi/v1/cart/update',
+            {
+                cart_item_key: cartItemKey,
+                quantity
+            },
+            { withCredentials: true }
+        );
+
+        if (response.data) {
+            return {
+                items: response.data.items || [],
+                subtotal: response.data.subtotal || 0,
+                total: response.data.total || 0,
+                currency: response.data.currency || 'IDR'
+            };
+        }
+
+        return { items: [], subtotal: 0, total: 0, currency: 'IDR' };
+    } catch (error) {
+        console.error('Failed to update cart:', error);
+        throw error;
+    }
+}
+
+// Remove item from cart
+export async function removeFromCart(cartItemKey: string): Promise<CartResponse> {
+    try {
+        const response = await axios.post(
+            'https://api.maknauang.com/wp-json/myapi/v1/cart/remove',
+            { cart_item_key: cartItemKey },
+            { withCredentials: true }
+        );
+
+        if (response.data) {
+            return {
+                items: response.data.items || [],
+                subtotal: response.data.subtotal || 0,
+                total: response.data.total || 0,
+                currency: response.data.currency || 'IDR'
+            };
+        }
+
+        return { items: [], subtotal: 0, total: 0, currency: 'IDR' };
+    } catch (error) {
+        console.error('Failed to remove from cart:', error);
+        throw error;
+    }
+}
+
+// Clear cart
+export async function clearCart(): Promise<{ success: boolean }> {
+    try {
+        await axios.post('https://api.maknauang.com/wp-json/myapi/v1/cart/clear', {}, { withCredentials: true });
+        return { success: true };
+    } catch (error) {
+        console.error('Failed to clear cart:', error);
+        return { success: false };
+    }
+}
+
+// ============================================================================
+// SHIPPING & PAYMENT TYPES
+// ============================================================================
+
+export interface ShippingMethod {
+    id: string;
+    title: string;
+    description: string;
+    cost: number;
+    enabled: boolean;
+}
+
+export interface PaymentRequest {
+    order_id: string;
+    success_url: string;
+    failure_url: string;
+}
+
+export interface PaymentResponse {
+    payment_url: string;
+    invoice_id: string;
+    amount: number;
+    currency: string;
+    status: string;
+}
+
+export interface PaymentStatus {
+    order_id: string;
+    status: 'pending' | 'paid' | 'failed' | 'expired';
+    payment_url?: string;
+    invoice_id?: string;
+}
+
+// ============================================================================
+// SHIPPING & PAYMENT API FUNCTIONS
+// ============================================================================
+
+// Get shipping methods
+export async function getShippingMethods(): Promise<ShippingMethod[]> {
+    try {
+        const response = await axios.get('https://api.maknauang.com/wp-json/myapi/v1/shipping/methods');
+
+        if (Array.isArray(response.data)) {
+            return response.data.map((method: any) => ({
+                id: method.id,
+                title: method.title,
+                description: method.description,
+                cost: parseInt(method.cost) || 0,
+                enabled: method.enabled !== false
+            }));
+        }
+
+        return [];
+    } catch (error) {
+        console.error('Failed to fetch shipping methods:', error);
+        return [];
+    }
+}
+
+// Create payment (Xendit invoice)
+export async function createPayment(request: PaymentRequest): Promise<PaymentResponse> {
+    try {
+        const response = await axios.post(
+            'https://api.maknauang.com/wp-json/myapi/v1/payment/create',
+            request,
+            { withCredentials: true }
+        );
+
+        return {
+            payment_url: response.data.payment_url || '',
+            invoice_id: response.data.invoice_id || '',
+            amount: response.data.amount || 0,
+            currency: response.data.currency || 'IDR',
+            status: response.data.status || 'pending'
+        };
+    } catch (error) {
+        console.error('Failed to create payment:', error);
+        throw error;
+    }
+}
+
+// Check payment status
+export async function getPaymentStatus(orderId: string): Promise<PaymentStatus> {
+    try {
+        const response = await axios.get(`https://api.maknauang.com/wp-json/myapi/v1/payment/status/${orderId}`);
+
+        return {
+            order_id: response.data.order_id || orderId,
+            status: response.data.status || 'pending',
+            payment_url: response.data.payment_url,
+            invoice_id: response.data.invoice_id
+        };
+    } catch (error) {
+        console.error('Failed to check payment status:', error);
+        return { order_id: orderId, status: 'pending' };
+    }
+}
+
+// ============================================================================
+// ORDER TYPES
+// ============================================================================
+
+export interface OrderCustomer {
+    first_name: string;
+    last_name: string;
+    email: string;
+    phone: string;
+    address_1: string;
+    address_2?: string;
+    city: string;
+    state: string;
+    postcode: string;
+    country: string;
+}
+
+export interface OrderRequest {
+    customer: OrderCustomer;
+    shipping_method: string;
+    payment_method: string;
+    notes?: string;
+}
+
+export interface Order {
+    id: string;
+    order_key: string;
+    status: 'pending' | 'processing' | 'completed' | 'cancelled' | 'refunded';
+    total: number;
+    currency: string;
+    customer: OrderCustomer;
+    items: CartItem[];
+    shipping_method: string;
+    payment_method: string;
+    payment_url?: string;
+    created_at: string;
+}
+
+// ============================================================================
+// ORDER API FUNCTIONS
+// ============================================================================
+
+// Create order
+export async function createOrder(orderData: OrderRequest): Promise<Order> {
+    try {
+        const response = await axios.post(
+            'https://api.maknauang.com/wp-json/myapi/v1/orders',
+            orderData,
+            { withCredentials: true }
+        );
+
+        return {
+            id: response.data.id?.toString() || '',
+            order_key: response.data.order_key || '',
+            status: response.data.status || 'pending',
+            total: response.data.total || 0,
+            currency: response.data.currency || 'IDR',
+            customer: response.data.customer,
+            items: response.data.items || [],
+            shipping_method: response.data.shipping_method || '',
+            payment_method: response.data.payment_method || '',
+            payment_url: response.data.payment_url,
+            created_at: response.data.created_at || new Date().toISOString()
+        };
+    } catch (error) {
+        console.error('Failed to create order:', error);
+        throw error;
+    }
+}
+
+// Get order by ID
+export async function getOrderById(orderId: string): Promise<Order | null> {
+    try {
+        const response = await axios.get(`https://api.maknauang.com/wp-json/myapi/v1/orders/${orderId}`, {
+            withCredentials: true
+        });
+
+        if (response.data) {
+            return {
+                id: response.data.id?.toString() || '',
+                order_key: response.data.order_key || '',
+                status: response.data.status || 'pending',
+                total: response.data.total || 0,
+                currency: response.data.currency || 'IDR',
+                customer: response.data.customer,
+                items: response.data.items || [],
+                shipping_method: response.data.shipping_method || '',
+                payment_method: response.data.payment_method || '',
+                payment_url: response.data.payment_url,
+                created_at: response.data.created_at || new Date().toISOString()
+            };
+        }
+
+        return null;
+    } catch (error) {
+        console.error(`Failed to fetch order ${orderId}:`, error);
+        return null;
+    }
+}
+
+// Get orders by customer email
+export async function getOrdersByEmail(email: string): Promise<Order[]> {
+    try {
+        const response = await axios.get(`https://api.maknauang.com/wp-json/myapi/v1/orders/customer/${email}`, {
+            withCredentials: true
+        });
+
+        if (Array.isArray(response.data)) {
+            return response.data.map((order: any) => ({
+                id: order.id?.toString() || '',
+                order_key: order.order_key || '',
+                status: order.status || 'pending',
+                total: order.total || 0,
+                currency: order.currency || 'IDR',
+                customer: order.customer,
+                items: order.items || [],
+                shipping_method: order.shipping_method || '',
+                payment_method: order.payment_method || '',
+                payment_url: order.payment_url,
+                created_at: order.created_at || new Date().toISOString()
+            }));
+        }
+
+        return [];
+    } catch (error) {
+        console.error('Failed to fetch orders:', error);
+        return [];
+    }
+}
+
+// Update order status
+export async function updateOrderStatus(orderId: string, status: string): Promise<Order | null> {
+    try {
+        const response = await axios.post(
+            `https://api.maknauang.com/wp-json/myapi/v1/orders/${orderId}/status`,
+            { status },
+            { withCredentials: true }
+        );
+
+        if (response.data) {
+            return {
+                id: response.data.id?.toString() || '',
+                order_key: response.data.order_key || '',
+                status: response.data.status || status,
+                total: response.data.total || 0,
+                currency: response.data.currency || 'IDR',
+                customer: response.data.customer,
+                items: response.data.items || [],
+                shipping_method: response.data.shipping_method || '',
+                payment_method: response.data.payment_method || '',
+                payment_url: response.data.payment_url,
+                created_at: response.data.created_at || new Date().toISOString()
+            };
+        }
+
+        return null;
+    } catch (error) {
+        console.error(`Failed to update order status for ${orderId}:`, error);
+        return null;
+    }
+}

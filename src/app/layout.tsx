@@ -19,6 +19,21 @@ const robotoMono = Roboto_Mono({
 export const metadata: Metadata = {
   title: "MAKNAUANG | DARI PERGOLAKAN DUNIA MENUJU STABILITAS FINANCIAL",
   description: "Berita dan analisis mendalam tentang ekonomi dan stabilitas finansial.",
+  metadataBase: new URL('https://www.maknauang.com'),
+  openGraph: {
+    title: "MAKNAUANG | DARI PERGOLAKAN DUNIA MENUJU STABILITAS FINANCIAL",
+    description: "Berita dan analisis mendalam tentang ekonomi dan stabilitas finansial.",
+    type: 'website',
+    locale: 'id_ID',
+    siteName: 'MaknaUang',
+    images: ['/opengraph-image'],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: "MAKNAUANG | DARI PERGOLAKAN DUNIA MENUJU STABILITAS FINANCIAL",
+    description: "Berita dan analisis mendalam tentang ekonomi dan stabilitas finansial.",
+    images: ['/twitter-image'],
+  },
 };
 
 export default function RootLayout({
