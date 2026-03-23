@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Search, Sun } from "lucide-react";
+import { Search, Sun, Leaf, Globe } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -136,6 +136,8 @@ export function Navbar({ cartTrigger }: NavbarProps) {
                             { name: "NEWS", href: "/news" },
                             { name: "HOT NEWS", href: "/hotnews" },
                             { name: "MERCHANT SOLAR", href: "/merchant", icon: Sun },
+                            { name: "APPS MAHLUK HIDUP", href: "/apps", icon: Leaf, comingSoon: true },
+                            { name: "SOLUSI APPS & WEBSITE", href: "https://www.malesgerak.my.id/", icon: Globe, external: true },
                             // { name: "ADVERTISE", href: "/contact" },
                             { name: "ABOUT", href: "/about" },
                             { name: "SUPPORT/FAQ", href: "/contact" },
@@ -144,10 +146,15 @@ export function Navbar({ cartTrigger }: NavbarProps) {
                             const isActive = item.name === "MERCHANT SOLAR" ? isMerchantPage : pathname === item.href;
                             const Icon = item.icon;
 
+                            const LinkComponent = item.external ? 'a' : Link;
+                            const linkProps = item.external
+                                ? { href: item.href, target: '_blank', rel: 'noopener noreferrer' }
+                                : { href: item.href };
+
                             return (
-                                <Link
+                                <LinkComponent
                                     key={item.name}
-                                    href={item.href}
+                                    {...linkProps}
                                     className={cn(
                                         "flex items-center gap-1.5 hover:text-neon transition-colors",
                                         isActive && "text-neon"
@@ -157,13 +164,25 @@ export function Navbar({ cartTrigger }: NavbarProps) {
                                         <Icon
                                             className={cn(
                                                 "w-3.5 h-3.5 transition-colors",
+                                                // Green leaf when apps page
+                                                item.name === "APPS MAHLUK HIDUP" && "text-green-500",
+                                                // Blue globe for solusi
+                                                item.name === "SOLUSI APPS & WEBSITE" && "text-blue-500",
                                                 // Yellow sun when merchant page is active
                                                 item.name === "MERCHANT SOLAR" && isMerchantPage && "text-yellow-400 fill-yellow-400"
                                             )}
                                         />
                                     )}
                                     <span>{item.name}</span>
-                                </Link>
+                                    {item.comingSoon && (
+                                        <span className="ml-1 px-1.5 py-0.5 text-[8px] bg-neon/20 text-neon rounded uppercase font-bold">
+                                            Soon
+                                        </span>
+                                    )}
+                                    {item.external && (
+                                        <span className="ml-1 text-[8px] text-muted-foreground">↗</span>
+                                    )}
+                                </LinkComponent>
                             );
                         })}
                     </div>

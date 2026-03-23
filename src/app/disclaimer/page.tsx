@@ -12,7 +12,7 @@ export default function DisclaimerPage() {
                     </h1>
 
                     <p>
-                        The information provided on SAKUNEWS is for general informational purposes only. All information on the site is provided in good faith, however we make no representation or warranty of any kind, express or implied, regarding the accuracy, adequacy, validity, reliability, availability, or completeness of any information on the site.
+                        The information provided on maknauang is for general informational purposes only. All information on the site is provided in good faith, however we make no representation or warranty of any kind, express or implied, regarding the accuracy, adequacy, validity, reliability, availability, or completeness of any information on the site.
                     </p>
 
                     <h2 className="text-xl font-bold uppercase tracking-wide text-neon mt-8 mb-4">External Links Disclaimer</h2>
@@ -27,7 +27,7 @@ export default function DisclaimerPage() {
 
                     <h2 className="text-xl font-bold uppercase tracking-wide text-neon mt-8 mb-4">Views Expressed</h2>
                     <p>
-                        The views and opinions expressed on this website are those of the authors and do not necessarily reflect the official policy or position of SAKUNEWS. Any content provided by our bloggers or authors are of their opinion and are not intended to malign any religion, ethnic group, club, organization, company, individual or anyone or anything.
+                        The views and opinions expressed on this website are those of the authors and do not necessarily reflect the official policy or position of maknauang. Any content provided by our bloggers or authors are of their opinion and are not intended to malign any religion, ethnic group, club, organization, company, individual or anyone or anything.
                     </p>
                 </article>
             </div>
