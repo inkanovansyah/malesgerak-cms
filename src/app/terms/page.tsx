@@ -14,12 +14,12 @@ export default function TermsPage() {
 
                     <h2 className="text-xl font-bold uppercase tracking-wide text-neon mt-8 mb-4">1. Introduction</h2>
                     <p>
-                        Welcome to SAKUNEWS. By accessing our website, you agree to be bound by these Terms and Conditions. Please read them carefully.
+                        Welcome to maknauang. By accessing our website, you agree to be bound by these Terms and Conditions. Please read them carefully.
                     </p>
 
                     <h2 className="text-xl font-bold uppercase tracking-wide text-neon mt-8 mb-4">2. Intellectual Property</h2>
                     <p>
-                        The content on this website, including text, graphics, logos, and images, is the property of SAKUNEWS or its content suppliers and is protected by copyright laws. You may not reproduce, distribute, or create derivative works without our express written permission.
+                        The content on this website, including text, graphics, logos, and images, is the property of maknauang or its content suppliers and is protected by copyright laws. You may not reproduce, distribute, or create derivative works without our express written permission.
                     </p>
 
                     <h2 className="text-xl font-bold uppercase tracking-wide text-neon mt-8 mb-4">3. User Conduct</h2>
@@ -29,7 +29,7 @@ export default function TermsPage() {
 
                     <h2 className="text-xl font-bold uppercase tracking-wide text-neon mt-8 mb-4">4. Limitation of Liability</h2>
                     <p>
-                        SAKUNEWS shall not be liable for any direct, indirect, incidental, or consequential damages arising out of your use of or inability to use this website.
+                        maknauang shall not be liable for any direct, indirect, incidental, or consequential damages arising out of your use of or inability to use this website.
                     </p>
 
                     <h2 className="text-xl font-bold uppercase tracking-wide text-neon mt-8 mb-4">5. Changes to Terms</h2>

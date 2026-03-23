@@ -13,7 +13,7 @@ export default function PrivacyPage() {
                     <p className="text-sm text-muted-foreground uppercase tracking-widest mb-8">Last Updated: February 9, 2026</p>
 
                     <p>
-                        Your privacy is important to us. It is SAKUNEWS' policy to respect your privacy regarding any information we may collect from you across our website.
+                        Your privacy is important to us. It is maknauang' policy to respect your privacy regarding any information we may collect from you across our website.
                     </p>
 
                     <h2 className="text-xl font-bold uppercase tracking-wide text-neon mt-8 mb-4">Information We Collect</h2>

@@ -6,7 +6,7 @@ import { Footer } from "@/components/Footer";
 export default function RedaksiPage() {
     // Mock team data
     const team = [
-        { name: "Jason Koebler", role: "Editor-in-Chief", bio: "Co-founder of SAKUNEWS. Previously at Motherboard.", image: "https://ui-avatars.com/api/?name=Jason+Koebler&background=random" },
+        { name: "Jason Koebler", role: "Editor-in-Chief", bio: "Co-founder of maknauang. Previously at Motherboard.", image: "https://ui-avatars.com/api/?name=Jason+Koebler&background=random" },
         { name: "Samantha Cole", role: "Senior Editor", bio: "Co-founder. Writes about the internet, labor, and sex tech.", image: "https://ui-avatars.com/api/?name=Samantha+Cole&background=random" },
         { name: "Emanuel Maiberg", role: "Executive Editor", bio: "Co-founder. Covers gaming, politics, and culture.", image: "https://ui-avatars.com/api/?name=Emanuel+Maiberg&background=random" },
         { name: "Joseph Cox", role: "Verification Lead", bio: "Co-founder. Investigative journalism on security and hacking.", image: "https://ui-avatars.com/api/?name=Joseph+Cox&background=random" },
