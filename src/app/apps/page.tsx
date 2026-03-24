@@ -2,6 +2,24 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { Leaf, Sprout, Cpu, Building2, TrendingUp, Shield, Users, Zap } from "lucide-react";
 import Image from "next/image";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "MAKNAUANG | Apps - mahlukhidup AgriTech Platform",
+  description: "mahlukhidup - Platform intelijen pertanian futuristik yang menghubungkan alam dengan teknologi data IoT dan AI untuk memaksimalkan hasil panen secara berkelanjutan. Kelola pertanian skala enterprise dengan monitoring real-time, prediksi panen cerdas, dan analisis ROI.",
+  keywords: ["agritech", "pertanian cerdas", "IoT pertanian", "AI pertanian", "monitoring tanaman", "prediksi panen", "precision farming", "smart farming Indonesia", "mahlukhidup", "agriculture technology"],
+  openGraph: {
+    title: "mahlukhidup - Platform AgriTech Futuristik",
+    description: "Platform intelijen pertanian dengan IoT dan AI untuk maksimalkan hasil panen secara berkelanjutan.",
+    type: "website",
+    url: "https://www.maknauang.com/apps",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "mahlukhidup - Platform AgriTech Futuristik",
+    description: "Platform intelijen pertanian dengan IoT dan AI untuk maksimalkan hasil panen secara berkelanjutan.",
+  },
+};
 
 export default function AppsPage() {
   return (
